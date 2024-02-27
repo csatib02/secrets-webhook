@@ -24,7 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/bank-vaults/vault-secrets-webhook/pkg/common"
+	"github.com/bank-vaults/secrets-webhook/pkg/common"
 )
 
 // Config represents the configuration for the webhook

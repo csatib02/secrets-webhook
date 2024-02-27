@@ -2,7 +2,7 @@
 # Reference for Garden projects can be found at https://docs.garden.io/reference/project-config
 apiVersion: garden.io/v1
 kind: Project
-name: vault-secrets-webhook
+name: secrets-webhook
 dotIgnoreFile: .gitignore
 defaultEnvironment: local
 

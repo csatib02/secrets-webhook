@@ -2,7 +2,7 @@
 
 export PATH := $(abspath bin/):${PATH}
 
-CONTAINER_IMAGE_REF = ghcr.io/bank-vaults/vault-secrets-webhook:dev
+CONTAINER_IMAGE_REF = ghcr.io/bank-vaults/secrets-webhook:dev
 
 ##@ General
 
@@ -34,8 +34,8 @@ run: ## Run the operator locally talking to a Kubernetes cluster
 forward: ## Install the webhook chart and kurun to port-forward the local webhook into Kubernetes
 	kubectl create namespace vault-infra --dry-run -o yaml | kubectl apply -f -
 	kubectl label namespaces vault-infra name=vault-infra --overwrite
-	$(HELM_BIN) upgrade --install vault-secrets-webhook deploy/charts/vault-secrets-webhook --namespace vault-infra --set replicaCount=0 --set podsFailurePolicy=Fail --set secretsFailurePolicy=Fail --set configMapMutation=true --set configMapFailurePolicy=Fail
-	$(KURUN_BIN) port-forward localhost:8443 --namespace vault-infra --servicename vault-secrets-webhook --tlssecret vault-secrets-webhook-webhook-tls
+	$(HELM_BIN) upgrade --install secrets-webhook deploy/charts/secrets-webhook --namespace vault-infra --set replicaCount=0 --set podsFailurePolicy=Fail --set secretsFailurePolicy=Fail --set configMapMutation=true --set configMapFailurePolicy=Fail
+	$(KURUN_BIN) port-forward localhost:8443 --namespace vault-infra --servicename secrets-webhook --tlssecret secrets-webhook-webhook-tls
 
 ##@ Build
 
@@ -51,7 +51,7 @@ container-image: ## Build container image
 .PHONY: helm-chart
 helm-chart: ## Build Helm chart
 	@mkdir -p build
-	$(HELM_BIN) package -d build/ deploy/charts/vault-secrets-webhook
+	$(HELM_BIN) package -d build/ deploy/charts/secrets-webhook
 
 .PHONY: artifacts
 artifacts: container-image helm-chart
@@ -84,7 +84,7 @@ lint-go:
 
 .PHONY: lint-helm
 lint-helm:
-	$(HELM_BIN) lint deploy/charts/vault-secrets-webhook
+	$(HELM_BIN) lint deploy/charts/secrets-webhook
 
 .PHONY: lint-docker
 lint-docker:

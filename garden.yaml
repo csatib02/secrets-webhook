@@ -22,7 +22,7 @@ spec:
 ---
 kind: Build
 type: container
-name: vault-secrets-webhook
+name: secrets-webhook
 exclude:
   - .direnv/**/*
   - .devenv/**/*
@@ -32,18 +32,18 @@ exclude:
 ---
 kind: Deploy
 type: helm
-name: vault-secrets-webhook
+name: secrets-webhook
 dependencies:
   - deploy.vault
 variables:
-  repository: ${actions.build.vault-secrets-webhook.outputs.deployment-image-name}
-  tag: ${actions.build.vault-secrets-webhook.version}
+  repository: ${actions.build.secrets-webhook.outputs.deployment-image-name}
+  tag: ${actions.build.secrets-webhook.version}
 spec:
-  namespace: vault-secrets-webhook
+  namespace: secrets-webhook
   chart:
-    path: ./deploy/charts/vault-secrets-webhook/
+    path: ./deploy/charts/secrets-webhook/
   valueFiles:
-    - ./e2e/deploy/vault-secrets-webhook/values.yaml
+    - ./e2e/deploy/secrets-webhook/values.yaml
   values:
     image:
       repository: ${var.repository}

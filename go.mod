@@ -1,4 +1,4 @@
-module github.com/bank-vaults/vault-secrets-webhook
+module github.com/bank-vaults/secrets-webhook
 
 go 1.21.1
 

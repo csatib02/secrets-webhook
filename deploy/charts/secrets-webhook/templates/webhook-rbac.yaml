@@ -2,15 +2,15 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: {{ template "vault-secrets-webhook.serviceAccountName" . }}
+  name: {{ template "secrets-webhook.serviceAccountName" . }}
   namespace: {{ .Release.Namespace }}
   {{- with .Values.serviceAccount.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
   {{- end }}
   labels:
-    helm.sh/chart: {{ include "vault-secrets-webhook.chart" . }}
-    app.kubernetes.io/name: {{ include "vault-secrets-webhook.name" . }}
+    helm.sh/chart: {{ include "secrets-webhook.chart" . }}
+    app.kubernetes.io/name: {{ include "secrets-webhook.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
   {{- if .Values.serviceAccount.labels }}
@@ -21,7 +21,7 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ template "vault-secrets-webhook.fullname" . }}
+  name: {{ template "secrets-webhook.fullname" . }}
 rules:
   - apiGroups:
       - ""
@@ -60,34 +60,34 @@ rules:
     verbs:
       - use
     resourceNames:
-      - {{ template "vault-secrets-webhook.fullname" . }}
+      - {{ template "secrets-webhook.fullname" . }}
 {{- end }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: {{ template "vault-secrets-webhook.fullname" . }}-limited
+  name: {{ template "secrets-webhook.fullname" . }}-limited
 roleRef:
   kind: ClusterRole
   apiGroup: rbac.authorization.k8s.io
-  name: {{ template "vault-secrets-webhook.fullname" . }}
+  name: {{ template "secrets-webhook.fullname" . }}
 subjects:
 - kind: ServiceAccount
   namespace: {{ .Release.Namespace }}
-  name: {{ template "vault-secrets-webhook.serviceAccountName" . }}
+  name: {{ template "secrets-webhook.serviceAccountName" . }}
 {{- if .Values.rbac.authDelegatorRole.enabled }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: {{ template "vault-secrets-webhook.fullname" . }}-auth-delegator
+  name: {{ template "secrets-webhook.fullname" . }}-auth-delegator
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: system:auth-delegator
 subjects:
   - kind: ServiceAccount
-    name: {{ template "vault-secrets-webhook.serviceAccountName" . }}
+    name: {{ template "secrets-webhook.serviceAccountName" . }}
     namespace: {{ .Release.Namespace }}
 {{- end }}
 

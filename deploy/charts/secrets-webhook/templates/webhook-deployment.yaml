@@ -1,11 +1,11 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ template "vault-secrets-webhook.fullname" . }}
+  name: {{ template "secrets-webhook.fullname" . }}
   namespace: {{ .Release.Namespace }}
   labels:
-    helm.sh/chart: {{ template "vault-secrets-webhook.chart" . }}
-    app.kubernetes.io/name: {{ template "vault-secrets-webhook.name" . }}
+    helm.sh/chart: {{ template "secrets-webhook.chart" . }}
+    app.kubernetes.io/name: {{ template "secrets-webhook.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/component: mutating-webhook
@@ -16,7 +16,7 @@ spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app.kubernetes.io/name: {{ template "vault-secrets-webhook.name" . }}
+      app.kubernetes.io/name: {{ template "secrets-webhook.name" . }}
       app.kubernetes.io/instance: {{ .Release.Name }}
   {{- if .Values.deployment }}
   {{- if .Values.deployment.strategy }}
@@ -27,7 +27,7 @@ spec:
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: {{ template "vault-secrets-webhook.name" . }}
+        app.kubernetes.io/name: {{ template "secrets-webhook.name" . }}
         app.kubernetes.io/instance: {{ .Release.Name }}
         security.banzaicloud.io/mutate: skip
         {{- if .Values.labels }}
@@ -45,7 +45,7 @@ spec:
       {{- with .Values.dnsPolicy }}
       dnsPolicy: {{ . }}
       {{- end }}
-      serviceAccountName: {{ template "vault-secrets-webhook.serviceAccountName" . }}
+      serviceAccountName: {{ template "secrets-webhook.serviceAccountName" . }}
       {{- if .Values.priorityClassName }}
       priorityClassName: {{ .Values.priorityClassName }}
       {{- end }}
@@ -53,7 +53,7 @@ spec:
         - name: serving-cert
           secret:
             defaultMode: 420
-            secretName: {{ include "vault-secrets-webhook.servingCertificate" . }}
+            secretName: {{ include "secrets-webhook.servingCertificate" . }}
 {{- if .Values.volumes }}
 {{ toYaml .Values.volumes | indent 8 }}
 {{- end }}
@@ -67,7 +67,7 @@ spec:
 {{- end }}
       containers:
         - name: {{ .Chart.Name }}
-          image: "{{ .Values.image.repository }}:{{ include "vault-secrets-webhook.bank-vaults.version" . }}"
+          image: "{{ .Values.image.repository }}:{{ include "secrets-webhook.bank-vaults.version" . }}"
           env:
             - name: TLS_CERT_FILE
               value: /var/serving-cert/tls.crt

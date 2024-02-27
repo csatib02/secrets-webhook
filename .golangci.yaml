@@ -6,9 +6,9 @@ linters-settings:
     sections:
       - standard
       - default
-      - prefix(github.com/bank-vaults/vault-secrets-webhook)
+      - prefix(github.com/bank-vaults/secrets-webhook)
   goimports:
-    local-prefixes: github.com/bank-vaults/vault-secrets-webhook
+    local-prefixes: github.com/bank-vaults/secrets-webhook
   misspell:
     locale: US
   nolintlint:

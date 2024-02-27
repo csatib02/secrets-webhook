@@ -1,5 +1,5 @@
 name: 🎉 Feature request
-description: Suggest an idea for the Vault Secrets Webhook
+description: Suggest an idea for the Secrets Webhook
 labels: [kind/enhancement]
 body:
   - type: markdown
@@ -15,7 +15,7 @@ body:
       label: Preflight Checklist
       description: Please ensure you've completed all of the following.
       options:
-        - label: I have searched the [issue tracker](https://www.github.com/bank-vaults/vault-secrets-webhook/issues) for an issue that matches the one I want to file, without success.
+        - label: I have searched the [issue tracker](https://www.github.com/bank-vaults/secrets-webhook/issues) for an issue that matches the one I want to file, without success.
           required: true
         - label: I agree to follow the [Code of Conduct](https://bank-vaults.dev/docs/code-of-conduct/).
           required: true

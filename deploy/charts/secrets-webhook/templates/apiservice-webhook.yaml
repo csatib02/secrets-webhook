@@ -3,7 +3,7 @@
 {{- $caCrt := "" }}
 {{- if .Values.certificate.generate }}
 {{- $ca := genCA "svc-cat-ca" (.Values.certificate.caLifespan | int) }}
-{{- $svcName := include "vault-secrets-webhook.fullname" . }}
+{{- $svcName := include "secrets-webhook.fullname" . }}
 {{- $cn := printf "%s.%s.svc" $svcName .Release.Namespace }}
 {{- $altName1 := printf "%s.cluster.local" $cn }}
 {{- $altName2 := printf "%s" $cn }}
@@ -82,7 +82,7 @@
 apiVersion: v1
 kind: Secret
 metadata:
-  name: {{ include "vault-secrets-webhook.servingCertificate" . }}
+  name: {{ include "secrets-webhook.servingCertificate" . }}
   namespace: {{ .Release.Namespace }}
 data:
   tls.crt: {{ $tlsCrt }}
@@ -90,25 +90,25 @@ data:
   ca.crt:  {{ $caCrt }}
 {{- end }}
 ---
-{{- if semverCompare ">=1.16-0" (include "vault-secrets-webhook.capabilities.kubeVersion" .) }}
+{{- if semverCompare ">=1.16-0" (include "secrets-webhook.capabilities.kubeVersion" .) }}
 apiVersion: admissionregistration.k8s.io/v1
 {{- else }}
 apiVersion: admissionregistration.k8s.io/v1beta1
 {{- end }}
 kind: MutatingWebhookConfiguration
 metadata:
-  name: {{ template "vault-secrets-webhook.fullname" . }}
+  name: {{ template "secrets-webhook.fullname" . }}
   namespace: {{ .Release.Namespace }}
 {{- if .Values.certificate.useCertManager }}
   annotations:
-    cert-manager.io/inject-ca-from: "{{ .Release.Namespace }}/{{ include "vault-secrets-webhook.servingCertificate" . }}"
+    cert-manager.io/inject-ca-from: "{{ .Release.Namespace }}/{{ include "secrets-webhook.servingCertificate" . }}"
 {{- else if .Values.certificate.servingCertificate }}
   annotations:
     cert-manager.io/inject-ca-from: "{{ .Release.Namespace }}/{{ .Values.certificate.servingCertificate }}"
 {{- end }}
 webhooks:
-- name: pods.{{ template "vault-secrets-webhook.name" . }}.admission.banzaicloud.com
-  {{- if semverCompare ">=1.14-0" (include "vault-secrets-webhook.capabilities.kubeVersion" .) }}
+- name: pods.{{ template "secrets-webhook.name" . }}.admission.banzaicloud.com
+  {{- if semverCompare ">=1.14-0" (include "secrets-webhook.capabilities.kubeVersion" .) }}
   {{- with .Values.reinvocationPolicy }}
   reinvocationPolicy: {{ . }}
   {{- end }}
@@ -123,7 +123,7 @@ webhooks:
     {{- else }}
     service:
       namespace: {{ .Release.Namespace }}
-      name: {{ template "vault-secrets-webhook.fullname" . }}
+      name: {{ template "secrets-webhook.fullname" . }}
       path: /pods
     {{- end }}
     {{- if not .Values.certificate.useCertManager }}
@@ -152,7 +152,7 @@ webhooks:
       operator: NotIn
       values:
       - {{ .Release.Namespace }}
-{{- if semverCompare ">=1.15-0" (include "vault-secrets-webhook.capabilities.kubeVersion" .) }}
+{{- if semverCompare ">=1.15-0" (include "secrets-webhook.capabilities.kubeVersion" .) }}
   objectSelector:
   {{- if $podsObjectSelector.matchLabels }}
     matchLabels:
@@ -167,15 +167,15 @@ webhooks:
       values:
       - skip
 {{- end }}
-{{- if semverCompare ">=1.12-0" (include "vault-secrets-webhook.capabilities.kubeVersion" .) }}
+{{- if semverCompare ">=1.12-0" (include "secrets-webhook.capabilities.kubeVersion" .) }}
   sideEffects: {{ .Values.apiSideEffectValue }}
 {{- end }}
 {{- if .Values.secretsMutation }}
-- name: secrets.{{ template "vault-secrets-webhook.name" . }}.admission.banzaicloud.com
+- name: secrets.{{ template "secrets-webhook.name" . }}.admission.banzaicloud.com
   {{- with .Values.reinvocationPolicy }}
   reinvocationPolicy: {{ . }}
   {{- end }}
-  {{- if semverCompare ">=1.14-0" (include "vault-secrets-webhook.capabilities.kubeVersion" .) }}
+  {{- if semverCompare ">=1.14-0" (include "secrets-webhook.capabilities.kubeVersion" .) }}
   admissionReviewVersions: ["v1beta1"]
   {{- if .Values.timeoutSeconds }}
   timeoutSeconds: {{ .Values.timeoutSeconds }}
@@ -187,7 +187,7 @@ webhooks:
     {{- else }}
     service:
       namespace: {{ .Release.Namespace }}
-      name: {{ template "vault-secrets-webhook.fullname" . }}
+      name: {{ template "secrets-webhook.fullname" . }}
       path: /secrets
     {{- end }}
     {{- if not .Values.certificate.useCertManager }}
@@ -217,7 +217,7 @@ webhooks:
       operator: NotIn
       values:
       - {{ .Release.Namespace }}
-{{- if semverCompare ">=1.15-0" (include "vault-secrets-webhook.capabilities.kubeVersion" .) }}
+{{- if semverCompare ">=1.15-0" (include "secrets-webhook.capabilities.kubeVersion" .) }}
   objectSelector:
   {{- if $secretsObjectSelector.matchLabels }}
     matchLabels:
@@ -236,13 +236,13 @@ webhooks:
       values:
       - skip
 {{- end }}
-{{- if semverCompare ">=1.12-0" (include "vault-secrets-webhook.capabilities.kubeVersion" .) }}
+{{- if semverCompare ">=1.12-0" (include "secrets-webhook.capabilities.kubeVersion" .) }}
   sideEffects: {{ .Values.apiSideEffectValue }}
 {{- end }}
 {{- end }}
 {{- if .Values.configMapMutation }}
-- name: configmaps.{{ template "vault-secrets-webhook.name" . }}.admission.banzaicloud.com
-  {{- if semverCompare ">=1.14-0" (include "vault-secrets-webhook.capabilities.kubeVersion" .) }}
+- name: configmaps.{{ template "secrets-webhook.name" . }}.admission.banzaicloud.com
+  {{- if semverCompare ">=1.14-0" (include "secrets-webhook.capabilities.kubeVersion" .) }}
   admissionReviewVersions: ["v1beta1"]
   {{- with .Values.reinvocationPolicy }}
   reinvocationPolicy: {{ . }}
@@ -257,7 +257,7 @@ webhooks:
     {{- else }}
     service:
       namespace: {{ .Release.Namespace }}
-      name: {{ template "vault-secrets-webhook.fullname" . }}
+      name: {{ template "secrets-webhook.fullname" . }}
       path: /configmaps
     {{- end }}
     {{- if not .Values.certificate.useCertManager }}
@@ -287,7 +287,7 @@ webhooks:
       operator: NotIn
       values:
       - {{ .Release.Namespace }}
-{{- if semverCompare ">=1.15-0" (include "vault-secrets-webhook.capabilities.kubeVersion" .) }}
+{{- if semverCompare ">=1.15-0" (include "secrets-webhook.capabilities.kubeVersion" .) }}
   objectSelector:
   {{- if $configmapsObjectSelector.matchLabels }}
     matchLabels:
@@ -306,13 +306,13 @@ webhooks:
       values:
       - skip
 {{- end }}
-{{- if semverCompare ">=1.12-0" (include "vault-secrets-webhook.capabilities.kubeVersion" .) }}
+{{- if semverCompare ">=1.12-0" (include "secrets-webhook.capabilities.kubeVersion" .) }}
   sideEffects: {{ .Values.apiSideEffectValue }}
 {{- end }}
 {{- end }}
 {{- if .Values.customResourceMutations }}
-- name: objects.{{ template "vault-secrets-webhook.name" . }}.admission.banzaicloud.com
-  {{- if semverCompare ">=1.14-0" (include "vault-secrets-webhook.capabilities.kubeVersion" .) }}
+- name: objects.{{ template "secrets-webhook.name" . }}.admission.banzaicloud.com
+  {{- if semverCompare ">=1.14-0" (include "secrets-webhook.capabilities.kubeVersion" .) }}
   admissionReviewVersions: ["v1beta1"]
   {{- if .Values.timeoutSeconds }}
   timeoutSeconds: {{ .Values.timeoutSeconds }}
@@ -324,7 +324,7 @@ webhooks:
     {{- else }}
     service:
       namespace: {{ .Release.Namespace }}
-      name: {{ template "vault-secrets-webhook.fullname" . }}
+      name: {{ template "secrets-webhook.fullname" . }}
       path: /objects
     {{- end }}
     {{- if not .Values.certificate.useCertManager }}
@@ -354,7 +354,7 @@ webhooks:
       operator: NotIn
       values:
       - {{ .Release.Namespace }}
-{{- if semverCompare ">=1.15-0" (include "vault-secrets-webhook.capabilities.kubeVersion" .) }}
+{{- if semverCompare ">=1.15-0" (include "secrets-webhook.capabilities.kubeVersion" .) }}
   objectSelector:
   {{- if $crObjectSelector.matchLabels }}
     matchLabels:
@@ -369,7 +369,7 @@ webhooks:
       values:
       - skip
 {{- end }}
-{{- if semverCompare ">=1.12-0" (include "vault-secrets-webhook.capabilities.kubeVersion" .) }}
+{{- if semverCompare ">=1.12-0" (include "secrets-webhook.capabilities.kubeVersion" .) }}
   sideEffects: {{ .Values.apiSideEffectValue }}
 {{- end }}
 {{- end }}

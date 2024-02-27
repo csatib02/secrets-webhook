@@ -37,7 +37,7 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	kubernetesConfig "sigs.k8s.io/controller-runtime/pkg/client/config"
 
-	"github.com/bank-vaults/vault-secrets-webhook/pkg/webhook"
+	"github.com/bank-vaults/secrets-webhook/pkg/webhook"
 )
 
 func init() {
@@ -129,7 +129,7 @@ func main() {
 
 		// TODO: add level filter handler
 		logger = slog.New(router.Handler())
-		logger = logger.With(slog.String("app", "vault-secrets-webhook"))
+		logger = logger.With(slog.String("app", "secrets-webhook"))
 
 		slog.SetDefault(logger)
 	}
@@ -158,10 +158,10 @@ func main() {
 	}
 
 	promHandler := promhttp.HandlerFor(promRegistry, promhttp.HandlerOpts{})
-	podHandler := handlerFor(mutating.WebhookConfig{ID: "vault-secrets-pods", Obj: &corev1.Pod{}, Logger: whLogger, Mutator: mutator}, metricsRecorder)
-	secretHandler := handlerFor(mutating.WebhookConfig{ID: "vault-secrets-secret", Obj: &corev1.Secret{}, Logger: whLogger, Mutator: mutator}, metricsRecorder)
-	configMapHandler := handlerFor(mutating.WebhookConfig{ID: "vault-secrets-configmap", Obj: &corev1.ConfigMap{}, Logger: whLogger, Mutator: mutator}, metricsRecorder)
-	objectHandler := handlerFor(mutating.WebhookConfig{ID: "vault-secrets-object", Obj: &unstructured.Unstructured{}, Logger: whLogger, Mutator: mutator}, metricsRecorder)
+	podHandler := handlerFor(mutating.WebhookConfig{ID: "secrets-pods", Obj: &corev1.Pod{}, Logger: whLogger, Mutator: mutator}, metricsRecorder)
+	secretHandler := handlerFor(mutating.WebhookConfig{ID: "secrets-secret", Obj: &corev1.Secret{}, Logger: whLogger, Mutator: mutator}, metricsRecorder)
+	configMapHandler := handlerFor(mutating.WebhookConfig{ID: "secrets-configmap", Obj: &corev1.ConfigMap{}, Logger: whLogger, Mutator: mutator}, metricsRecorder)
+	objectHandler := handlerFor(mutating.WebhookConfig{ID: "secrets-object", Obj: &unstructured.Unstructured{}, Logger: whLogger, Mutator: mutator}, metricsRecorder)
 
 	mux := http.NewServeMux()
 	mux.Handle("/pods", podHandler)

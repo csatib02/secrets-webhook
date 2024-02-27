@@ -12,7 +12,7 @@ RUN xx-apk --update --no-cache add musl-dev gcc
 
 RUN xx-go --wrap
 
-WORKDIR /usr/local/src/vault-secrets-webhook
+WORKDIR /usr/local/src/secrets-webhook
 
 ARG GOPROXY
 
@@ -23,16 +23,16 @@ RUN go mod download
 
 COPY . .
 
-RUN go build -o /usr/local/bin/vault-secrets-webhook .
-RUN xx-verify /usr/local/bin/vault-secrets-webhook
+RUN go build -o /usr/local/bin/secrets-webhook .
+RUN xx-verify /usr/local/bin/secrets-webhook
 
 
 FROM alpine:3.19.1@sha256:c5b1261d6d3e43071626931fc004f70149baeba2c8ec672bd4f27761f8e1ad6b
 
 RUN apk add --update --no-cache ca-certificates tzdata libcap
 
-COPY --from=builder /usr/local/bin/vault-secrets-webhook /usr/local/bin/vault-secrets-webhook
+COPY --from=builder /usr/local/bin/secrets-webhook /usr/local/bin/secrets-webhook
 
 USER 65534
 
-ENTRYPOINT ["vault-secrets-webhook"]
+ENTRYPOINT ["secrets-webhook"]

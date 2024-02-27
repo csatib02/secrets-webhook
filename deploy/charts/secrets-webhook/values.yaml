@@ -1,4 +1,4 @@
-# Default values for vault-secrets-webhook.
+# Default values for secrets-webhook.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
@@ -34,7 +34,7 @@ certificate:
 
 image:
   # -- Container image repo that contains the admission server
-  repository: ghcr.io/bank-vaults/vault-secrets-webhook
+  repository: ghcr.io/bank-vaults/secrets-webhook
   # -- Container image tag
   tag: ""
   # -- Container image pull policy
@@ -44,7 +44,7 @@ image:
 
 service:
   # -- Webhook service name
-  name: vault-secrets-webhook
+  name: secrets-webhook
   # -- Webhook service type
   type: ClusterIP
   # -- Webhook service external port

@@ -66,7 +66,7 @@
               GARDEN_DISABLE_ANALYTICS = "true";
 
               KUBECONFIG = "${config.devenv.shells.default.env.DEVENV_STATE}/kube/config";
-              KIND_CLUSTER_NAME = "vault-secrets-webhook";
+              KIND_CLUSTER_NAME = "secrets-webhook";
 
               HELM_CACHE_HOME = "${config.devenv.shells.default.env.DEVENV_STATE}/helm/cache";
               HELM_CONFIG_HOME = "${config.devenv.shells.default.env.DEVENV_STATE}/helm/config";

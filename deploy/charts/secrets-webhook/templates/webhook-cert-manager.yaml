@@ -5,11 +5,11 @@
 apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
-  name: {{ include "vault-secrets-webhook.selfSignedIssuer" . }}
+  name: {{ include "secrets-webhook.selfSignedIssuer" . }}
   namespace: {{ .Release.Namespace | quote }}
   labels:
-    app: {{ include "vault-secrets-webhook.name" . }}
-    chart: {{ include "vault-secrets-webhook.chart" . }}
+    app: {{ include "secrets-webhook.name" . }}
+    chart: {{ include "secrets-webhook.chart" . }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 spec:
@@ -21,19 +21,19 @@ spec:
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: {{ include "vault-secrets-webhook.rootCACertificate" . }}
+  name: {{ include "secrets-webhook.rootCACertificate" . }}
   namespace: {{ .Release.Namespace | quote }}
   labels:
-    app: {{ include "vault-secrets-webhook.name" . }}
-    chart: {{ include "vault-secrets-webhook.chart" . }}
+    app: {{ include "secrets-webhook.name" . }}
+    chart: {{ include "secrets-webhook.chart" . }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 spec:
-  secretName: {{ include "vault-secrets-webhook.rootCACertificate" . }}
+  secretName: {{ include "secrets-webhook.rootCACertificate" . }}
   duration: 43800h0m0s # 5y
   issuerRef:
-    name: {{ include "vault-secrets-webhook.selfSignedIssuer" . }}
-  commonName: "ca.vault-secrets-webhook.cert-manager"
+    name: {{ include "secrets-webhook.selfSignedIssuer" . }}
+  commonName: "ca.secrets-webhook.cert-manager"
   isCA: true
   privateKey:
     rotationPolicy: Always
@@ -43,16 +43,16 @@ spec:
 apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
-  name: {{ include "vault-secrets-webhook.rootCAIssuer" . }}
+  name: {{ include "secrets-webhook.rootCAIssuer" . }}
   namespace: {{ .Release.Namespace | quote }}
   labels:
-    app: {{ include "vault-secrets-webhook.name" . }}
-    chart: {{ include "vault-secrets-webhook.chart" . }}
+    app: {{ include "secrets-webhook.name" . }}
+    chart: {{ include "secrets-webhook.chart" . }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 spec:
   ca:
-    secretName: {{ include "vault-secrets-webhook.rootCACertificate" . }}
+    secretName: {{ include "secrets-webhook.rootCACertificate" . }}
 
 {{- end }}
 {{- if or .Values.certificate.useCertManager .Values.certificate.servingCertificate }}
@@ -62,22 +62,22 @@ spec:
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: {{ include "vault-secrets-webhook.servingCertificate" . }}
+  name: {{ include "secrets-webhook.servingCertificate" . }}
   namespace: {{ .Release.Namespace | quote }}
   labels:
-    app: {{ include "vault-secrets-webhook.name" . }}
-    chart: {{ include "vault-secrets-webhook.chart" . }}
+    app: {{ include "secrets-webhook.name" . }}
+    chart: {{ include "secrets-webhook.chart" . }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 spec:
-  secretName: {{ include "vault-secrets-webhook.servingCertificate" . }}
+  secretName: {{ include "secrets-webhook.servingCertificate" . }}
   duration: 8760h0m0s # 1y
   issuerRef:
-    name: {{ include "vault-secrets-webhook.rootCAIssuer" . }}
+    name: {{ include "secrets-webhook.rootCAIssuer" . }}
   dnsNames:
-  - {{ include "vault-secrets-webhook.fullname" . }}
-  - {{ include "vault-secrets-webhook.fullname" . }}.{{ .Release.Namespace }}
-  - {{ include "vault-secrets-webhook.fullname" . }}.{{ .Release.Namespace }}.svc
+  - {{ include "secrets-webhook.fullname" . }}
+  - {{ include "secrets-webhook.fullname" . }}.{{ .Release.Namespace }}
+  - {{ include "secrets-webhook.fullname" . }}.{{ .Release.Namespace }}.svc
   {{- range .Values.certificate.extraAltNames }}
   - {{ . }}
   {{- end }}

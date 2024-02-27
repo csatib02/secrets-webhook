@@ -1,9 +1,9 @@
 {{- if .Values.ingress.enabled }}
 ---
-apiVersion: {{ include "vault-secrets-webhook.capabilities.ingress.apiVersion" . }}
+apiVersion: {{ include "secrets-webhook.capabilities.ingress.apiVersion" . }}
 kind: Ingress
 metadata:
-  name: {{ template "vault-secrets-webhook.fullname" . }}
+  name: {{ template "secrets-webhook.fullname" . }}
   namespace: {{ .Release.Namespace }}
   {{- if .Values.ingress.annotations }}
   annotations:
@@ -13,7 +13,7 @@ spec:
   tls:
   - hosts:
       - {{ .Values.ingress.host }}
-    secretName: {{ include "vault-secrets-webhook.servingCertificate" . }}
+    secretName: {{ include "secrets-webhook.servingCertificate" . }}
   rules:
   - host: {{ .Values.ingress.host }}
     http:
@@ -22,7 +22,7 @@ spec:
         pathType: ImplementationSpecific
         backend:
           service:
-            name: {{ template "vault-secrets-webhook.fullname" . }}
+            name: {{ template "secrets-webhook.fullname" . }}
             port:
               number: {{ .Values.service.externalPort }}
 {{- end }}

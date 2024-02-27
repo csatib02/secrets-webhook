@@ -76,7 +76,7 @@ func TestMain(m *testing.M) {
 		// testenv = env.NewWithConfig(cfg)
 		testenv = &reverseFinishEnvironment{Environment: env.NewWithConfig(cfg)}
 	} else {
-		clusterName := envconf.RandomName("vault-secrets-webhook-test", 32)
+		clusterName := envconf.RandomName("secrets-webhook-test", 32)
 
 		kindCluster := kind.NewProvider()
 		if v := os.Getenv("KIND_K8S_VERSION"); v != "" {
@@ -102,8 +102,8 @@ func TestMain(m *testing.M) {
 		testenv.Setup(installVaultOperator)
 		testenv.Finish(uninstallVaultOperator, envfuncs.DeleteNamespace("vault-operator"))
 
-		testenv.Setup(envfuncs.CreateNamespace("vault-secrets-webhook"), installVaultSecretsWebhook)
-		testenv.Finish(uninstallVaultSecretsWebhook, envfuncs.DeleteNamespace("vault-secrets-webhook"))
+		testenv.Setup(envfuncs.CreateNamespace("secrets-webhook"), installVaultSecretsWebhook)
+		testenv.Finish(uninstallVaultSecretsWebhook, envfuncs.DeleteNamespace("secrets-webhook"))
 
 		// Set up test namespace
 		// ns := envconf.RandomName("webhook-test", 16)
@@ -166,21 +166,21 @@ func installVaultSecretsWebhook(ctx context.Context, cfg *envconf.Config) (conte
 		version = v
 	}
 
-	chart := "../deploy/charts/vault-secrets-webhook/"
+	chart := "../deploy/charts/secrets-webhook/"
 	if v := os.Getenv("HELM_CHART"); v != "" {
 		chart = v
 	}
 
 	err := manager.RunInstall(
-		helm.WithName("vault-secrets-webhook"), // This is weird that ReleaseName works differently, but it is what it is
+		helm.WithName("secrets-webhook"), // This is weird that ReleaseName works differently, but it is what it is
 		helm.WithChart(chart),
-		helm.WithNamespace("vault-secrets-webhook"),
-		helm.WithArgs("-f", "deploy/vault-secrets-webhook/values.yaml", "--set", "image.tag="+version),
+		helm.WithNamespace("secrets-webhook"),
+		helm.WithArgs("-f", "deploy/secrets-webhook/values.yaml", "--set", "image.tag="+version),
 		helm.WithWait(),
 		helm.WithTimeout("2m"),
 	)
 	if err != nil {
-		return ctx, fmt.Errorf("installing vault-secrets-webhook: %w", err)
+		return ctx, fmt.Errorf("installing secrets-webhook: %w", err)
 	}
 
 	return ctx, nil
@@ -190,13 +190,13 @@ func uninstallVaultSecretsWebhook(ctx context.Context, cfg *envconf.Config) (con
 	manager := helm.New(cfg.KubeconfigFile())
 
 	err := manager.RunUninstall(
-		helm.WithName("vault-secrets-webhook"),
-		helm.WithNamespace("vault-secrets-webhook"),
+		helm.WithName("secrets-webhook"),
+		helm.WithNamespace("secrets-webhook"),
 		helm.WithWait(),
 		helm.WithTimeout("2m"),
 	)
 	if err != nil {
-		return ctx, fmt.Errorf("uninstalling vault-secrets-webhook: %w", err)
+		return ctx, fmt.Errorf("uninstalling secrets-webhook: %w", err)
 	}
 
 	return ctx, nil

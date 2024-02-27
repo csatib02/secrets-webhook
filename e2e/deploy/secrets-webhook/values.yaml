@@ -19,4 +19,4 @@ namespaceSelector:
       values:
         - kube-system
         - vault-operator
-        - vault-secrets-webhook
+        - secrets-webhook

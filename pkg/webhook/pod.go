@@ -29,7 +29,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeVer "k8s.io/apimachinery/pkg/version"
 
-	"github.com/bank-vaults/vault-secrets-webhook/pkg/common"
+	"github.com/bank-vaults/secrets-webhook/pkg/common"
 )
 
 const (

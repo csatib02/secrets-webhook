@@ -1,4 +1,4 @@
-# vault-secrets-webhook
+# secrets-webhook
 
 A Kubernetes mutating webhook that makes direct secret injection into Pods possible
 
@@ -71,7 +71,7 @@ kubectl label namespace "${WEBHOOK_NS}" name="${WEBHOOK_NS}"
 ### Install the chart
 
 ```bash
-$ helm install vswh --namespace vswh --wait oci://ghcr.io/bank-vaults/helm-charts/vault-secrets-webhook --create-namespace
+$ helm install vswh --namespace vswh --wait oci://ghcr.io/bank-vaults/helm-charts/secrets-webhook --create-namespace
 ```
 
 ### Openshift 4.3
@@ -79,7 +79,7 @@ $ helm install vswh --namespace vswh --wait oci://ghcr.io/bank-vaults/helm-chart
 For security reasons, the `runAsUser` must be in the range between 1000570000 and 1000579999. By setting the value of `securityContext.runAsUser` to `""`, OpenShift chooses a valid User.
 
 ```bash
-$ helm upgrade --namespace vswh --install vswh oci://ghcr.io/bank-vaults/helm-charts/vault-secrets-webhook --set-string securityContext.runAsUser="" --create-namespace
+$ helm upgrade --namespace vswh --install vswh oci://ghcr.io/bank-vaults/helm-charts/secrets-webhook --set-string securityContext.runAsUser="" --create-namespace
 ```
 
 ### About GKE Private Clusters
@@ -107,11 +107,11 @@ The following table lists the configurable parameters of the Helm chart.
 | `certificate.extraAltNames` | list | `[]` | Use extra names if you want to use the webhook via an ingress or a loadbalancer |
 | `certificate.caLifespan` | int | `3650` | The number of days from the creation of the CA certificate until it expires |
 | `certificate.certLifespan` | int | `365` | The number of days from the creation of the TLS certificate until it expires |
-| `image.repository` | string | `"ghcr.io/bank-vaults/vault-secrets-webhook"` | Container image repo that contains the admission server |
+| `image.repository` | string | `"ghcr.io/bank-vaults/secrets-webhook"` | Container image repo that contains the admission server |
 | `image.tag` | string | `""` | Container image tag |
 | `image.pullPolicy` | string | `"IfNotPresent"` | Container image pull policy |
 | `image.imagePullSecrets` | list | `[]` | Container image pull secrets for private repositories |
-| `service.name` | string | `"vault-secrets-webhook"` | Webhook service name |
+| `service.name` | string | `"secrets-webhook"` | Webhook service name |
 | `service.type` | string | `"ClusterIP"` | Webhook service type |
 | `service.externalPort` | int | `443` | Webhook service external port |
 | `service.internalPort` | int | `8443` | Webhook service internal port |

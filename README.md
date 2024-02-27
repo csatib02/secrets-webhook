@@ -1,9 +1,9 @@
-# Vault Secrets Webhook
+# Secrets Webhook
 
-[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/bank-vaults/vault-secrets-webhook/ci.yaml?style=flat-square)](https://github.com/bank-vaults/vault-secrets-webhook/actions/workflows/ci.yaml)
-[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/bank-vaults/vault-secrets-webhook/badge?style=flat-square)](https://api.securityscorecards.dev/projects/github.com/bank-vaults/vault-secrets-webhook)
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/bank-vaults/secrets-webhook/ci.yaml?style=flat-square)](https://github.com/bank-vaults/secrets-webhook/actions/workflows/ci.yaml)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/bank-vaults/secrets-webhook/badge?style=flat-square)](https://api.securityscorecards.dev/projects/github.com/bank-vaults/secrets-webhook)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/7961/badge)](https://www.bestpractices.dev/projects/7961)
-[![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/vault-secrets-webhook)](https://artifacthub.io/packages/search?repo=vault-secrets-webhook)
+[![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/secrets-webhook)](https://artifacthub.io/packages/search?repo=secrets-webhook)
 
 **A Kubernetes mutating webhook that makes direct secret injection into Pods possible.**
 

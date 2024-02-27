@@ -71,7 +71,7 @@ kubectl label namespace "${WEBHOOK_NS}" name="${WEBHOOK_NS}"
 ### Install the chart
 
 ```bash
-$ helm install vswh --namespace vswh --wait oci://ghcr.io/bank-vaults/helm-charts/vault-secrets-webhook --create-namespace
+$ helm install vswh --namespace vswh --wait oci://ghcr.io/bank-vaults/helm-charts/secrets-webhook --create-namespace
 ```
 
 ### Openshift 4.3
@@ -79,7 +79,7 @@ $ helm install vswh --namespace vswh --wait oci://ghcr.io/bank-vaults/helm-chart
 For security reasons, the `runAsUser` must be in the range between 1000570000 and 1000579999. By setting the value of `securityContext.runAsUser` to `""`, OpenShift chooses a valid User.
 
 ```bash
-$ helm upgrade --namespace vswh --install vswh oci://ghcr.io/bank-vaults/helm-charts/vault-secrets-webhook --set-string securityContext.runAsUser="" --create-namespace
+$ helm upgrade --namespace vswh --install vswh oci://ghcr.io/bank-vaults/helm-charts/secrets-webhook --set-string securityContext.runAsUser="" --create-namespace
 ```
 
 ### About GKE Private Clusters

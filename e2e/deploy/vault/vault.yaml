@@ -27,7 +27,7 @@ spec:
   # Support for distributing the generated CA certificate Secret to other namespaces.
   # Define a list of namespaces or use ["*"] for all namespaces.
   caNamespaces:
-    - "vault-secrets-webhook"
+    - "secrets-webhook"
 
   # Describe where you would like to store the Vault unseal keys and root token.
   unsealConfig:
@@ -98,8 +98,8 @@ spec:
         roles:
           # Allow every pod in the default namespace to use the secret kv store
           - name: default
-            bound_service_account_names: ["default", "vault-secrets-webhook", "vault"]
-            bound_service_account_namespaces: ["default", "vault-secrets-webhook"]
+            bound_service_account_names: ["default", "secrets-webhook", "vault"]
+            bound_service_account_namespaces: ["default", "secrets-webhook"]
             policies: ["allow_secrets", "allow_pki"]
             ttl: 1h
 
