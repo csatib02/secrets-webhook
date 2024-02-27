@@ -30,18 +30,12 @@ const (
 	MutateAnnotation                      = "vault.security.banzaicloud.io/mutate"
 	MutateProbesAnnotation                = "vault.security.banzaicloud.io/mutate-probes"
 
-	// Vault-env/Secret-init annotations
-	// NOTE: Change these once vault-env has been replaced with secret-init
-	VaultEnvDaemonAnnotation = "vault.security.banzaicloud.io/vault-env-daemon"
-	// SecretInitDaemonAnnotation = "vault.security.banzaicloud.io/secret-init-daemon"
-	VaultEnvDelayAnnotation = "vault.security.banzaicloud.io/vault-env-delay"
-	// SecretInitDelayAnnotation = "vault.security.banzaicloud.io/secret-init-delay"
-	EnableJSONLogAnnotation = "vault.security.banzaicloud.io/enable-json-log"
-	// SecretInitJSONLogAnnotation = "vault.security.banzaicloud.io/secret-init-json-log"
-	VaultEnvImageAnnotation = "vault.security.banzaicloud.io/vault-env-image"
-	// SecretInitImageAnnotation = "vault.security.banzaicloud.io/secret-init-image"
-	VaultEnvImagePullPolicyAnnotation = "vault.security.banzaicloud.io/vault-env-image-pull-policy"
-	// SecretInitImagePullPolicyAnnotation = "vault.security.banzaicloud.io/secret-init-image-pull-policy"
+	// Secret-init annotations
+	SecretInitDaemonAnnotation          = "vault.security.banzaicloud.io/secret-init-daemon"
+	SecretInitDelayAnnotation           = "vault.security.banzaicloud.io/secret-init-delay"
+	SecretInitJSONLogAnnotation         = "vault.security.banzaicloud.io/secret-init-json-log"
+	SecretInitImageAnnotation           = "vault.security.banzaicloud.io/secret-init-image"
+	SecretInitImagePullPolicyAnnotation = "vault.security.banzaicloud.io/secret-init-image-pull-policy"
 
 	// Vault annotations
 	VaultAddrAnnotation                     = "vault.security.banzaicloud.io/vault-addr"
@@ -62,11 +56,8 @@ const (
 	VaultNamespaceAnnotation                = "vault.security.banzaicloud.io/vault-namespace"
 	ServiceAccountTokenVolumeNameAnnotation = "vault.security.banzaicloud.io/service-account-token-volume-name"
 	LogLevelAnnotation                      = "vault.security.banzaicloud.io/log-level"
-	// NOTE: Change these once vault-env has been replaced with secret-init
-	VaultEnvPassthroughAnnotation = "vault.security.banzaicloud.io/vault-env-passthrough"
-	// VaultPasstroughAnnotation = "vault.security.banzaicloud.io/vault-passthrough"
-	VaultEnvFromPathAnnotation = "vault.security.banzaicloud.io/vault-env-from-path"
-	// VaultFromPathAnnotation = "vault.security.banzaicloud.io/vault-from-path"
+	VaultPassthroughAnnotation              = "vault.security.banzaicloud.io/vault-passthrough"
+	VaultFromPathAnnotation                 = "vault.security.banzaicloud.io/vault-from-path"
 
 	// Vault agent annotations
 	// ref: https://bank-vaults.dev/docs/mutating-webhook/vault-agent-templating/

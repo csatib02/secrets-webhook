@@ -27,8 +27,35 @@ import (
 	"github.com/bank-vaults/vault-secrets-webhook/pkg/common"
 )
 
+// Config represents the configuration for the webhook
+type Config struct {
+	PspAllowPrivilegeEscalation bool
+	RunAsNonRoot                bool
+	RunAsUser                   int64
+	RunAsGroup                  int64
+	ReadOnlyRootFilesystem      bool
+	RegistrySkipVerify          bool
+	Mutate                      bool
+	MutateProbes                bool
+}
+
+// SecretInitConfig represents the configuration for the secret-init container
+type SecretInitConfig struct {
+	Daemon          bool
+	Delay           time.Duration
+	JSONLog         string
+	Image           string
+	ImagePullPolicy corev1.PullPolicy
+	LogServer       string
+	CPURequest      resource.Quantity
+	MemoryRequest   resource.Quantity
+	CPULimit        resource.Quantity
+	MemoryLimit     resource.Quantity
+}
+
 // VaultConfig represents vault options
 type VaultConfig struct {
+	ObjectNamespace               string
 	Addr                          string
 	AuthMethod                    string
 	Role                          string
@@ -37,8 +64,6 @@ type VaultConfig struct {
 	TLSSecret                     string
 	ClientTimeout                 time.Duration
 	UseAgent                      bool
-	VaultEnvDaemon                bool
-	VaultEnvDelay                 time.Duration
 	TransitKeyID                  string
 	TransitPath                   string
 	TransitBatchSize              int
@@ -51,17 +76,7 @@ type VaultConfig struct {
 	CtShareProcessDefault         string
 	CtCPU                         resource.Quantity
 	CtMemory                      resource.Quantity
-	PspAllowPrivilegeEscalation   bool
-	RunAsNonRoot                  bool
-	RunAsUser                     int64
-	RunAsGroup                    int64
-	ReadOnlyRootFilesystem        bool
-	RegistrySkipVerify            bool
-	IgnoreMissingSecrets          string
-	VaultEnvPassThrough           string
 	ConfigfilePath                string
-	EnableJSONLog                 string
-	LogLevel                      string
 	AgentConfigMap                string
 	AgentOnce                     bool
 	AgentShareProcess             bool
@@ -74,21 +89,118 @@ type VaultConfig struct {
 	AgentImagePullPolicy          corev1.PullPolicy
 	AgentEnvVariables             string
 	ServiceAccountTokenVolumeName string
-	EnvImage                      string
-	EnvImagePullPolicy            corev1.PullPolicy
-	EnvLogServer                  string
-	Skip                          bool
-	VaultEnvFromPath              string
 	TokenAuthMount                string
-	EnvCPURequest                 resource.Quantity
-	EnvMemoryRequest              resource.Quantity
-	EnvCPULimit                   resource.Quantity
-	EnvMemoryLimit                resource.Quantity
 	VaultNamespace                string
 	VaultServiceAccount           string
-	ObjectNamespace               string
-	MutateProbes                  bool
 	Token                         string
+	IgnoreMissingSecrets          string
+	Passthrough                   string
+	LogLevel                      string
+	FromPath                      string
+}
+
+func parseConfig(obj metav1.Object) Config {
+	Config := Config{}
+
+	annotations := obj.GetAnnotations()
+
+	if val, ok := annotations[common.MutateAnnotation]; ok {
+		Config.Mutate, _ = strconv.ParseBool(val)
+	}
+
+	if val, ok := annotations[common.PSPAllowPrivilegeEscalationAnnotation]; ok {
+		Config.PspAllowPrivilegeEscalation, _ = strconv.ParseBool(val)
+	}
+
+	if val, ok := annotations[common.RunAsNonRootAnnotation]; ok {
+		Config.RunAsNonRoot, _ = strconv.ParseBool(val)
+	}
+
+	if val, ok := annotations[common.RunAsUserAnnotation]; ok {
+		Config.RunAsUser, _ = strconv.ParseInt(val, 10, 64)
+	}
+
+	if val, ok := annotations[common.RunAsGroupAnnotation]; ok {
+		Config.RunAsGroup, _ = strconv.ParseInt(val, 10, 64)
+	}
+
+	if val, ok := annotations[common.ReadOnlyRootFsAnnotation]; ok {
+		Config.ReadOnlyRootFilesystem, _ = strconv.ParseBool(val)
+	}
+
+	if val, ok := annotations[common.RegistrySkipVerifyAnnotation]; ok {
+		Config.RegistrySkipVerify, _ = strconv.ParseBool(val)
+	}
+
+	if val, ok := annotations[common.MutateProbesAnnotation]; ok {
+		Config.MutateProbes, _ = strconv.ParseBool(val)
+	}
+
+	return Config
+}
+
+func parseSecretInitConfig(obj metav1.Object) SecretInitConfig {
+	secretInitConfig := SecretInitConfig{}
+
+	annotations := obj.GetAnnotations()
+
+	if val, ok := annotations[common.SecretInitDaemonAnnotation]; ok {
+		secretInitConfig.Daemon, _ = strconv.ParseBool(val)
+	} else {
+		secretInitConfig.Daemon, _ = strconv.ParseBool(viper.GetString("secret_init_daemon"))
+	}
+
+	if val, ok := annotations[common.SecretInitDelayAnnotation]; ok {
+		secretInitConfig.Delay, _ = time.ParseDuration(val)
+	} else {
+		secretInitConfig.Delay, _ = time.ParseDuration(viper.GetString("secret_init_delay"))
+	}
+
+	if val, ok := annotations[common.SecretInitJSONLogAnnotation]; ok {
+		secretInitConfig.JSONLog = val
+	} else {
+		secretInitConfig.JSONLog = viper.GetString("secret_init_json_log")
+	}
+
+	if val, ok := annotations[common.SecretInitImageAnnotation]; ok {
+		secretInitConfig.Image = val
+	} else {
+		secretInitConfig.Image = viper.GetString("secret_init_image")
+	}
+
+	secretInitConfig.LogServer = viper.GetString("SECRET_INIT_LOG_SERVER")
+
+	if val, ok := annotations[common.SecretInitImagePullPolicyAnnotation]; ok {
+		secretInitConfig.ImagePullPolicy = getPullPolicy(val)
+	} else {
+		secretInitConfig.ImagePullPolicy = getPullPolicy(viper.GetString("secret_init_image_pull_policy"))
+	}
+
+	if val, err := resource.ParseQuantity(viper.GetString("SECRET_INIT_CPU_REQUEST")); err == nil {
+		secretInitConfig.CPURequest = val
+	} else {
+		secretInitConfig.CPURequest = resource.MustParse("50m")
+	}
+
+	if val, err := resource.ParseQuantity(viper.GetString("SECRET_INIT_MEMORY_REQUEST")); err == nil {
+		secretInitConfig.MemoryRequest = val
+	} else {
+		secretInitConfig.MemoryRequest = resource.MustParse("64Mi")
+	}
+
+	if val, err := resource.ParseQuantity(viper.GetString("SECRET_INIT_CPU_LIMIT")); err == nil {
+		secretInitConfig.CPULimit = val
+	} else {
+		secretInitConfig.CPULimit = resource.MustParse("250m")
+	}
+
+	if val, err := resource.ParseQuantity(viper.GetString("SECRET_INIT_MEMORY_LIMIT")); err == nil {
+		secretInitConfig.MemoryLimit = val
+	} else {
+		secretInitConfig.MemoryLimit = resource.MustParse("64Mi")
+	}
+
+	return secretInitConfig
 }
 
 func parseVaultConfig(obj metav1.Object, ar *model.AdmissionReview) VaultConfig {
@@ -97,12 +209,6 @@ func parseVaultConfig(obj metav1.Object, ar *model.AdmissionReview) VaultConfig 
 	}
 
 	annotations := obj.GetAnnotations()
-
-	if val := annotations[common.MutateAnnotation]; val == "skip" {
-		vaultConfig.Skip = true
-
-		return vaultConfig
-	}
 
 	if val, ok := annotations[common.VaultAddrAnnotation]; ok {
 		vaultConfig.Addr = val
@@ -168,18 +274,6 @@ func parseVaultConfig(obj metav1.Object, ar *model.AdmissionReview) VaultConfig 
 		vaultConfig.UseAgent, _ = strconv.ParseBool(viper.GetString("vault_agent"))
 	}
 
-	if val, ok := annotations[common.VaultEnvDaemonAnnotation]; ok {
-		vaultConfig.VaultEnvDaemon, _ = strconv.ParseBool(val)
-	} else {
-		vaultConfig.VaultEnvDaemon, _ = strconv.ParseBool(viper.GetString("vault_env_daemon"))
-	}
-
-	if val, ok := annotations[common.VaultEnvDelayAnnotation]; ok {
-		vaultConfig.VaultEnvDelay, _ = time.ParseDuration(val)
-	} else {
-		vaultConfig.VaultEnvDelay, _ = time.ParseDuration(viper.GetString("vault_env_delay"))
-	}
-
 	if val, ok := annotations[common.VaultConsulTemplateConfigmapAnnotation]; ok {
 		vaultConfig.CtConfigMap = val
 	} else {
@@ -205,10 +299,10 @@ func parseVaultConfig(obj metav1.Object, ar *model.AdmissionReview) VaultConfig 
 	} else {
 		vaultConfig.IgnoreMissingSecrets = viper.GetString("vault_ignore_missing_secrets")
 	}
-	if val, ok := annotations[common.VaultEnvPassthroughAnnotation]; ok {
-		vaultConfig.VaultEnvPassThrough = val
+	if val, ok := annotations[common.VaultPassthroughAnnotation]; ok {
+		vaultConfig.Passthrough = val
 	} else {
-		vaultConfig.VaultEnvPassThrough = viper.GetString("vault_env_passthrough")
+		vaultConfig.Passthrough = viper.GetString("vault_passthrough")
 	}
 	if val, ok := annotations[common.VaultConfigfilePathAnnotation]; ok {
 		vaultConfig.ConfigfilePath = val
@@ -250,52 +344,10 @@ func parseVaultConfig(obj metav1.Object, ar *model.AdmissionReview) VaultConfig 
 		vaultConfig.CtShareProcess = false
 	}
 
-	if val, ok := annotations[common.PSPAllowPrivilegeEscalationAnnotation]; ok {
-		vaultConfig.PspAllowPrivilegeEscalation, _ = strconv.ParseBool(val)
-	} else {
-		vaultConfig.PspAllowPrivilegeEscalation, _ = strconv.ParseBool(viper.GetString("psp_allow_privilege_escalation"))
-	}
-
-	if val, ok := annotations[common.RunAsNonRootAnnotation]; ok {
-		vaultConfig.RunAsNonRoot, _ = strconv.ParseBool(val)
-	} else {
-		vaultConfig.RunAsNonRoot, _ = strconv.ParseBool(viper.GetString("run_as_non_root"))
-	}
-
-	if val, ok := annotations[common.RunAsUserAnnotation]; ok {
-		vaultConfig.RunAsUser, _ = strconv.ParseInt(val, 10, 64)
-	} else {
-		vaultConfig.RunAsUser, _ = strconv.ParseInt(viper.GetString("run_as_user"), 0, 64)
-	}
-
-	if val, ok := annotations[common.RunAsGroupAnnotation]; ok {
-		vaultConfig.RunAsGroup, _ = strconv.ParseInt(val, 10, 64)
-	} else {
-		vaultConfig.RunAsGroup, _ = strconv.ParseInt(viper.GetString("run_as_group"), 0, 64)
-	}
-
-	if val, ok := annotations[common.ReadOnlyRootFsAnnotation]; ok {
-		vaultConfig.ReadOnlyRootFilesystem, _ = strconv.ParseBool(val)
-	} else {
-		vaultConfig.ReadOnlyRootFilesystem, _ = strconv.ParseBool(viper.GetString("readonly_root_fs"))
-	}
-
-	if val, ok := annotations[common.RegistrySkipVerifyAnnotation]; ok {
-		vaultConfig.RegistrySkipVerify, _ = strconv.ParseBool(val)
-	} else {
-		vaultConfig.RegistrySkipVerify, _ = strconv.ParseBool(viper.GetString("registry_skip_verify"))
-	}
-
 	if val, ok := annotations[common.LogLevelAnnotation]; ok {
 		vaultConfig.LogLevel = val
 	} else {
 		vaultConfig.LogLevel = viper.GetString("log_level")
-	}
-
-	if val, ok := annotations[common.EnableJSONLogAnnotation]; ok {
-		vaultConfig.EnableJSONLog = val
-	} else {
-		vaultConfig.EnableJSONLog = viper.GetString("enable_json_log")
 	}
 
 	if val, ok := annotations[common.TransitKeyIDAnnotation]; ok {
@@ -360,26 +412,12 @@ func parseVaultConfig(obj metav1.Object, ar *model.AdmissionReview) VaultConfig 
 		vaultConfig.AgentShareProcess = false
 	}
 
-	if val, ok := annotations[common.VaultEnvFromPathAnnotation]; ok {
-		vaultConfig.VaultEnvFromPath = val
+	if val, ok := annotations[common.VaultFromPathAnnotation]; ok {
+		vaultConfig.FromPath = val
 	}
 
 	if val, ok := annotations[common.TokenAuthMountAnnotation]; ok {
 		vaultConfig.TokenAuthMount = val
-	}
-
-	if val, ok := annotations[common.VaultEnvImageAnnotation]; ok {
-		vaultConfig.EnvImage = val
-	} else {
-		vaultConfig.EnvImage = viper.GetString("vault_env_image")
-	}
-
-	vaultConfig.EnvLogServer = viper.GetString("VAULT_ENV_LOG_SERVER")
-
-	if val, ok := annotations[common.VaultEnvImagePullPolicyAnnotation]; ok {
-		vaultConfig.EnvImagePullPolicy = getPullPolicy(val)
-	} else {
-		vaultConfig.EnvImagePullPolicy = getPullPolicy(viper.GetString("vault_env_pull_policy"))
 	}
 
 	if val, ok := annotations[common.VaultImageAnnotation]; ok {
@@ -407,36 +445,6 @@ func parseVaultConfig(obj metav1.Object, ar *model.AdmissionReview) VaultConfig 
 		vaultConfig.CtInjectInInitcontainers, _ = strconv.ParseBool(val)
 	} else {
 		vaultConfig.CtInjectInInitcontainers = false
-	}
-
-	if val, err := resource.ParseQuantity(viper.GetString("VAULT_ENV_CPU_REQUEST")); err == nil {
-		vaultConfig.EnvCPURequest = val
-	} else {
-		vaultConfig.EnvCPURequest = resource.MustParse("50m")
-	}
-
-	if val, err := resource.ParseQuantity(viper.GetString("VAULT_ENV_MEMORY_REQUEST")); err == nil {
-		vaultConfig.EnvMemoryRequest = val
-	} else {
-		vaultConfig.EnvMemoryRequest = resource.MustParse("64Mi")
-	}
-
-	if val, err := resource.ParseQuantity(viper.GetString("VAULT_ENV_CPU_LIMIT")); err == nil {
-		vaultConfig.EnvCPULimit = val
-	} else {
-		vaultConfig.EnvCPULimit = resource.MustParse("250m")
-	}
-
-	if val, err := resource.ParseQuantity(viper.GetString("VAULT_ENV_MEMORY_LIMIT")); err == nil {
-		vaultConfig.EnvMemoryLimit = val
-	} else {
-		vaultConfig.EnvMemoryLimit = resource.MustParse("64Mi")
-	}
-
-	if val, ok := annotations[common.MutateProbesAnnotation]; ok {
-		vaultConfig.MutateProbes, _ = strconv.ParseBool(val)
-	} else {
-		vaultConfig.MutateProbes = false
 	}
 
 	if val, ok := annotations[common.TransitBatchSizeAnnotation]; ok {
@@ -467,8 +475,8 @@ func getPullPolicy(pullPolicyStr string) corev1.PullPolicy {
 func SetConfigDefaults() {
 	viper.SetDefault("vault_image", "hashicorp/vault:latest")
 	viper.SetDefault("vault_image_pull_policy", string(corev1.PullIfNotPresent))
-	viper.SetDefault("vault_env_image", "ghcr.io/bank-vaults/vault-env:latest")
-	viper.SetDefault("vault_env_pull_policy", string(corev1.PullIfNotPresent))
+	viper.SetDefault("secret_init_image", "ghcr.io/bank-vaults/secret-init:latest")
+	viper.SetDefault("secret_init_image_pull_policy", string(corev1.PullIfNotPresent))
 	viper.SetDefault("vault_ct_image", "hashicorp/consul-template:0.32.0")
 	viper.SetDefault("vault_ct_pull_policy", string(corev1.PullIfNotPresent))
 	viper.SetDefault("vault_addr", "https://vault:8200")
@@ -479,7 +487,7 @@ func SetConfigDefaults() {
 	viper.SetDefault("vault_tls_secret", "")
 	viper.SetDefault("vault_client_timeout", "10s")
 	viper.SetDefault("vault_agent", "false")
-	viper.SetDefault("vault_env_daemon", "false")
+	viper.SetDefault("secret_init_daemon", "false")
 	viper.SetDefault("vault_ct_share_process_namespace", "")
 	viper.SetDefault("psp_allow_privilege_escalation", "false")
 	viper.SetDefault("run_as_non_root", "false")
@@ -487,7 +495,7 @@ func SetConfigDefaults() {
 	viper.SetDefault("run_as_group", "0")
 	viper.SetDefault("readonly_root_fs", "false")
 	viper.SetDefault("vault_ignore_missing_secrets", "false")
-	viper.SetDefault("vault_env_passthrough", "")
+	viper.SetDefault("vault_passthrough", "")
 	viper.SetDefault("mutate_configmap", "false")
 	viper.SetDefault("tls_cert_file", "")
 	viper.SetDefault("tls_private_key_file", "")
@@ -500,14 +508,14 @@ func SetConfigDefaults() {
 	viper.SetDefault("default_image_pull_secret_service_account", "")
 	viper.SetDefault("default_image_pull_secret_namespace", "")
 	viper.SetDefault("registry_skip_verify", "false")
-	viper.SetDefault("enable_json_log", "false")
+	viper.SetDefault("secret_init_json_log", "false")
 	viper.SetDefault("log_level", "info")
 	viper.SetDefault("vault_agent_share_process_namespace", "")
-	viper.SetDefault("VAULT_ENV_CPU_REQUEST", "")
-	viper.SetDefault("VAULT_ENV_MEMORY_REQUEST", "")
-	viper.SetDefault("VAULT_ENV_CPU_LIMIT", "")
-	viper.SetDefault("VAULT_ENV_MEMORY_LIMIT", "")
-	viper.SetDefault("VAULT_ENV_LOG_SERVER", "")
+	viper.SetDefault("SECRET_INIT_CPU_REQUEST", "")
+	viper.SetDefault("SECRET_INIT_MEMORY_REQUEST", "")
+	viper.SetDefault("SECRET_INIT_CPU_LIMIT", "")
+	viper.SetDefault("SECRET_INIT_MEMORY_LIMIT", "")
+	viper.SetDefault("SECRET_INIT_LOG_SERVER", "")
 	viper.SetDefault("VAULT_NAMESPACE", "")
 
 	viper.AutomaticEnv()
