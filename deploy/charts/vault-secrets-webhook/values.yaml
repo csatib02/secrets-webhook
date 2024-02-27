@@ -69,11 +69,11 @@ webhookClientConfig:
   # -- Set the url how the webhook should be contacted, including the protocol
   url: https://example.com
 
-vaultEnv:
-  # -- Container image repo that contains the vault-env container
-  repository: ghcr.io/bank-vaults/vault-env
-  # -- Container image tag for the vault-env container
-  tag: "v1.21.3"
+secretInit:
+  # -- Container image repo that contains the secret-init container
+  repository: ghcr.io/bank-vaults/secret-init
+  # -- Container image tag for the secret-init container
+  tag: "v0.1.0"
 
 # -- Custom environment variables available to webhook
 env: {}
@@ -92,16 +92,16 @@ env: {}
   ## -- Define the webhook's role in Vault used for authentication, if not defined individually in resources by annotations
   # VAULT_ROLE: ""
 
-  ## -- Cpu requests and limits for init-containers vault-env and copy-vault-env
-  # VAULT_ENV_CPU_REQUEST: ""
-  # VAULT_ENV_CPU_LIMIT: ""
+  ## -- Cpu requests and limits for init-containers secret-init and copy-secret-init
+  # SECRET_INIT_CPU_REQUEST: ""
+  # SECRET_INIT_CPU_LIMIT: ""
 
-  ## -- Memory requests and limits for init-containers vault-env and copy-vault-env
-  # VAULT_ENV_MEMORY_REQUEST: ""
-  # VAULT_ENV_MEMORY_LIMIT: ""
+  ## -- Memory requests and limits for init-containers secret-init and copy-secret-init
+  # SECRET_INIT_MEMORY_REQUEST: ""
+  # SECRET_INIT_MEMORY_LIMIT: ""
 
-  ## -- Define remote log server for vault-env
-  # VAULT_ENV_LOG_SERVER: ""
+  ## -- Define remote log server for secret-init
+  # SECRET_INIT_LOG_SERVER: ""
 
 # -- Containers to run before the webhook containers are started
 initContainers: []
