@@ -28,6 +28,16 @@ import (
 	fake "k8s.io/client-go/kubernetes/fake"
 )
 
+var webhookConfig = Config{
+	RunAsNonRoot: true,
+	RunAsUser:    int64(1000),
+	RunAsGroup:   int64(1000),
+}
+
+var secretInitConfig = SecretInitConfig{
+	JSONLog: "enableJSONLog",
+}
+
 var vaultConfig = VaultConfig{
 	Addr:                 "addr",
 	SkipVerify:           false,
@@ -35,12 +45,8 @@ var vaultConfig = VaultConfig{
 	Role:                 "role",
 	AuthMethod:           "jwt",
 	IgnoreMissingSecrets: "ignoreMissingSecrets",
-	VaultEnvPassThrough:  "vaultEnvPassThrough",
-	EnableJSONLog:        "enableJSONLog",
+	Passthrough:          "vaultPassthrough",
 	ClientTimeout:        10 * time.Second,
-	RunAsNonRoot:         true,
-	RunAsUser:            int64(1000),
-	RunAsGroup:           int64(1000),
 }
 
 type MockRegistry struct {
@@ -55,16 +61,18 @@ func Test_mutatingWebhook_mutateContainers(t *testing.T) {
 	t.Parallel()
 
 	vaultConfigEnvFrom := vaultConfig
-	vaultConfigEnvFrom.VaultEnvFromPath = "secrets/application"
+	vaultConfigEnvFrom.FromPath = "secrets/application"
 
 	type fields struct {
 		k8sClient kubernetes.Interface
 		registry  ImageRegistry
 	}
 	type args struct {
-		containers  []corev1.Container
-		podSpec     *corev1.PodSpec
-		vaultConfig VaultConfig
+		containers       []corev1.Container
+		podSpec          *corev1.PodSpec
+		webhookConfig    Config
+		SecretInitConfig SecretInitConfig
+		vaultConfig      VaultConfig
 	}
 	tests := []struct {
 		name             string
@@ -97,15 +105,17 @@ func Test_mutatingWebhook_mutateContainers(t *testing.T) {
 						},
 					},
 				},
-				vaultConfig: vaultConfig,
+				webhookConfig:    webhookConfig,
+				SecretInitConfig: secretInitConfig,
+				vaultConfig:      vaultConfig,
 			},
 			wantedContainers: []corev1.Container{
 				{
 					Name:         "MyContainer",
 					Image:        "myimage",
-					Command:      []string{"/vault/vault-env"},
+					Command:      []string{"/vault/secret-init"},
 					Args:         []string{"/bin/bash"},
-					VolumeMounts: []corev1.VolumeMount{{Name: "vault-env", MountPath: "/vault/"}},
+					VolumeMounts: []corev1.VolumeMount{{Name: "secret-init", MountPath: "/vault/"}},
 					Env: []corev1.EnvVar{
 						{Name: "myvar", Value: "vault:secrets"},
 						{Name: "VAULT_ADDR", Value: "addr"},
@@ -114,8 +124,8 @@ func Test_mutatingWebhook_mutateContainers(t *testing.T) {
 						{Name: "VAULT_PATH", Value: "path"},
 						{Name: "VAULT_ROLE", Value: "role"},
 						{Name: "VAULT_IGNORE_MISSING_SECRETS", Value: "ignoreMissingSecrets"},
-						{Name: "VAULT_ENV_PASSTHROUGH", Value: "vaultEnvPassThrough"},
-						{Name: "VAULT_JSON_LOG", Value: "enableJSONLog"},
+						{Name: "VAULT_PASSTHROUGH", Value: "vaultPassthrough"},
+						{Name: "SECRET_INIT_JSON_LOG", Value: "enableJSONLog"},
 						{Name: "VAULT_CLIENT_TIMEOUT", Value: "10s"},
 					},
 				},
@@ -146,15 +156,17 @@ func Test_mutatingWebhook_mutateContainers(t *testing.T) {
 						},
 					},
 				},
-				vaultConfig: vaultConfig,
+				webhookConfig:    webhookConfig,
+				SecretInitConfig: secretInitConfig,
+				vaultConfig:      vaultConfig,
 			},
 			wantedContainers: []corev1.Container{
 				{
 					Name:         "MyContainer",
 					Image:        "myimage",
-					Command:      []string{"/vault/vault-env"},
+					Command:      []string{"/vault/secret-init"},
 					Args:         []string{"/bin/bash"},
-					VolumeMounts: []corev1.VolumeMount{{Name: "vault-env", MountPath: "/vault/"}},
+					VolumeMounts: []corev1.VolumeMount{{Name: "secret-init", MountPath: "/vault/"}},
 					Env: []corev1.EnvVar{
 						{Name: "myvar", Value: ">>vault:secrets"},
 						{Name: "VAULT_ADDR", Value: "addr"},
@@ -163,8 +175,8 @@ func Test_mutatingWebhook_mutateContainers(t *testing.T) {
 						{Name: "VAULT_PATH", Value: "path"},
 						{Name: "VAULT_ROLE", Value: "role"},
 						{Name: "VAULT_IGNORE_MISSING_SECRETS", Value: "ignoreMissingSecrets"},
-						{Name: "VAULT_ENV_PASSTHROUGH", Value: "vaultEnvPassThrough"},
-						{Name: "VAULT_JSON_LOG", Value: "enableJSONLog"},
+						{Name: "VAULT_PASSTHROUGH", Value: "vaultPassthrough"},
+						{Name: "SECRET_INIT_JSON_LOG", Value: "enableJSONLog"},
 						{Name: "VAULT_CLIENT_TIMEOUT", Value: "10s"},
 					},
 				},
@@ -197,15 +209,17 @@ func Test_mutatingWebhook_mutateContainers(t *testing.T) {
 						},
 					},
 				},
-				vaultConfig: vaultConfig,
+				webhookConfig:    webhookConfig,
+				SecretInitConfig: secretInitConfig,
+				vaultConfig:      vaultConfig,
 			},
 			wantedContainers: []corev1.Container{
 				{
 					Name:         "MyContainer",
 					Image:        "myimage",
-					Command:      []string{"/vault/vault-env"},
+					Command:      []string{"/vault/secret-init"},
 					Args:         []string{"myEntryPoint"},
-					VolumeMounts: []corev1.VolumeMount{{Name: "vault-env", MountPath: "/vault/"}},
+					VolumeMounts: []corev1.VolumeMount{{Name: "secret-init", MountPath: "/vault/"}},
 					Env: []corev1.EnvVar{
 						{Name: "myvar", Value: ">>vault:secrets"},
 						{Name: "VAULT_ADDR", Value: "addr"},
@@ -214,8 +228,8 @@ func Test_mutatingWebhook_mutateContainers(t *testing.T) {
 						{Name: "VAULT_PATH", Value: "path"},
 						{Name: "VAULT_ROLE", Value: "role"},
 						{Name: "VAULT_IGNORE_MISSING_SECRETS", Value: "ignoreMissingSecrets"},
-						{Name: "VAULT_ENV_PASSTHROUGH", Value: "vaultEnvPassThrough"},
-						{Name: "VAULT_JSON_LOG", Value: "enableJSONLog"},
+						{Name: "VAULT_PASSTHROUGH", Value: "vaultPassthrough"},
+						{Name: "SECRET_INIT_JSON_LOG", Value: "enableJSONLog"},
 						{Name: "VAULT_CLIENT_TIMEOUT", Value: "10s"},
 					},
 				},
@@ -253,21 +267,23 @@ func Test_mutatingWebhook_mutateContainers(t *testing.T) {
 						},
 					},
 				},
-				vaultConfig: VaultConfig{
+				webhookConfig: Config{
 					MutateProbes: true,
 				},
+				SecretInitConfig: SecretInitConfig{},
+				vaultConfig:      VaultConfig{},
 			},
 			wantedContainers: []corev1.Container{
 				{
 					Name:         "MyContainer",
 					Image:        "myimage",
-					Command:      []string{"/vault/vault-env"},
+					Command:      []string{"/vault/secret-init"},
 					Args:         []string{"/bin/bash"},
-					VolumeMounts: []corev1.VolumeMount{{Name: "vault-env", MountPath: "/vault/"}},
+					VolumeMounts: []corev1.VolumeMount{{Name: "secret-init", MountPath: "/vault/"}},
 					LivenessProbe: &corev1.Probe{
 						ProbeHandler: corev1.ProbeHandler{
 							Exec: &corev1.ExecAction{
-								Command: []string{"/vault/vault-env", "/bin/bash"},
+								Command: []string{"/vault/secret-init", "/bin/bash"},
 							},
 						},
 					},
@@ -279,8 +295,8 @@ func Test_mutatingWebhook_mutateContainers(t *testing.T) {
 						{Name: "VAULT_PATH", Value: ""},
 						{Name: "VAULT_ROLE", Value: ""},
 						{Name: "VAULT_IGNORE_MISSING_SECRETS", Value: ""},
-						{Name: "VAULT_ENV_PASSTHROUGH", Value: ""},
-						{Name: "VAULT_JSON_LOG", Value: ""},
+						{Name: "VAULT_PASSTHROUGH", Value: ""},
+						{Name: "SECRET_INIT_JSON_LOG", Value: ""},
 						{Name: "VAULT_CLIENT_TIMEOUT", Value: "0s"},
 					},
 				},
@@ -313,15 +329,17 @@ func Test_mutatingWebhook_mutateContainers(t *testing.T) {
 						},
 					},
 				},
-				vaultConfig: vaultConfig,
+				webhookConfig:    webhookConfig,
+				SecretInitConfig: secretInitConfig,
+				vaultConfig:      vaultConfig,
 			},
 			wantedContainers: []corev1.Container{
 				{
 					Name:         "MyContainer",
 					Image:        "myimage",
-					Command:      []string{"/vault/vault-env"},
+					Command:      []string{"/vault/secret-init"},
 					Args:         []string{"myCmd"},
-					VolumeMounts: []corev1.VolumeMount{{Name: "vault-env", MountPath: "/vault/"}},
+					VolumeMounts: []corev1.VolumeMount{{Name: "secret-init", MountPath: "/vault/"}},
 					Env: []corev1.EnvVar{
 						{Name: "myvar", Value: ">>vault:secrets"},
 						{Name: "VAULT_ADDR", Value: "addr"},
@@ -330,8 +348,8 @@ func Test_mutatingWebhook_mutateContainers(t *testing.T) {
 						{Name: "VAULT_PATH", Value: "path"},
 						{Name: "VAULT_ROLE", Value: "role"},
 						{Name: "VAULT_IGNORE_MISSING_SECRETS", Value: "ignoreMissingSecrets"},
-						{Name: "VAULT_ENV_PASSTHROUGH", Value: "vaultEnvPassThrough"},
-						{Name: "VAULT_JSON_LOG", Value: "enableJSONLog"},
+						{Name: "VAULT_PASSTHROUGH", Value: "vaultPassthrough"},
+						{Name: "SECRET_INIT_JSON_LOG", Value: "enableJSONLog"},
 						{Name: "VAULT_CLIENT_TIMEOUT", Value: "10s"},
 					},
 				},
@@ -355,7 +373,9 @@ func Test_mutatingWebhook_mutateContainers(t *testing.T) {
 						Command: []string{"/bin/bash"},
 					},
 				},
-				vaultConfig: vaultConfig,
+				webhookConfig:    webhookConfig,
+				SecretInitConfig: secretInitConfig,
+				vaultConfig:      vaultConfig,
 			},
 			wantedContainers: []corev1.Container{
 				{
@@ -390,15 +410,17 @@ func Test_mutatingWebhook_mutateContainers(t *testing.T) {
 						},
 					},
 				},
-				vaultConfig: vaultConfigEnvFrom,
+				webhookConfig:    webhookConfig,
+				SecretInitConfig: secretInitConfig,
+				vaultConfig:      vaultConfigEnvFrom,
 			},
 			wantedContainers: []corev1.Container{
 				{
 					Name:         "MyContainer",
 					Image:        "myimage",
-					Command:      []string{"/vault/vault-env"},
+					Command:      []string{"/vault/secret-init"},
 					Args:         []string{"/bin/bash"},
-					VolumeMounts: []corev1.VolumeMount{{Name: "vault-env", MountPath: "/vault/"}},
+					VolumeMounts: []corev1.VolumeMount{{Name: "secret-init", MountPath: "/vault/"}},
 					Env: []corev1.EnvVar{
 						{Name: "myvar", Value: "vault:secrets"},
 						{Name: "VAULT_ADDR", Value: "addr"},
@@ -407,10 +429,10 @@ func Test_mutatingWebhook_mutateContainers(t *testing.T) {
 						{Name: "VAULT_PATH", Value: "path"},
 						{Name: "VAULT_ROLE", Value: "role"},
 						{Name: "VAULT_IGNORE_MISSING_SECRETS", Value: "ignoreMissingSecrets"},
-						{Name: "VAULT_ENV_PASSTHROUGH", Value: "vaultEnvPassThrough"},
-						{Name: "VAULT_JSON_LOG", Value: "enableJSONLog"},
+						{Name: "VAULT_PASSTHROUGH", Value: "vaultPassthrough"},
+						{Name: "SECRET_INIT_JSON_LOG", Value: "enableJSONLog"},
 						{Name: "VAULT_CLIENT_TIMEOUT", Value: "10s"},
-						{Name: "VAULT_ENV_FROM_PATH", Value: "secrets/application"},
+						{Name: "VAULT_FROM_PATH", Value: "secrets/application"},
 					},
 				},
 			},
@@ -440,15 +462,17 @@ func Test_mutatingWebhook_mutateContainers(t *testing.T) {
 						},
 					},
 				},
-				vaultConfig: vaultConfig,
+				webhookConfig:    webhookConfig,
+				SecretInitConfig: secretInitConfig,
+				vaultConfig:      vaultConfig,
 			},
 			wantedContainers: []corev1.Container{
 				{
 					Name:         "MyContainer",
 					Image:        "myimage",
-					Command:      []string{"/vault/vault-env"},
+					Command:      []string{"/vault/secret-init"},
 					Args:         []string{"/bin/bash"},
-					VolumeMounts: []corev1.VolumeMount{{Name: "vault-env", MountPath: "/vault/"}},
+					VolumeMounts: []corev1.VolumeMount{{Name: "secret-init", MountPath: "/vault/"}},
 					Env: []corev1.EnvVar{
 						{Name: "myvar", Value: "scheme://${vault:secret/data/account#username}:${vault:secret/data/account#password}@127.0.0.1:8080"},
 						{Name: "VAULT_ADDR", Value: "addr"},
@@ -457,8 +481,8 @@ func Test_mutatingWebhook_mutateContainers(t *testing.T) {
 						{Name: "VAULT_PATH", Value: "path"},
 						{Name: "VAULT_ROLE", Value: "role"},
 						{Name: "VAULT_IGNORE_MISSING_SECRETS", Value: "ignoreMissingSecrets"},
-						{Name: "VAULT_ENV_PASSTHROUGH", Value: "vaultEnvPassThrough"},
-						{Name: "VAULT_JSON_LOG", Value: "enableJSONLog"},
+						{Name: "VAULT_PASSTHROUGH", Value: "vaultPassthrough"},
+						{Name: "SECRET_INIT_JSON_LOG", Value: "enableJSONLog"},
 						{Name: "VAULT_CLIENT_TIMEOUT", Value: "10s"},
 					},
 				},
@@ -493,6 +517,8 @@ func Test_mutatingWebhook_mutateContainers(t *testing.T) {
 						},
 					},
 				},
+				webhookConfig:    webhookConfig,
+				SecretInitConfig: secretInitConfig,
 				vaultConfig: VaultConfig{
 					Addr:                 "addr",
 					SkipVerify:           false,
@@ -500,8 +526,7 @@ func Test_mutatingWebhook_mutateContainers(t *testing.T) {
 					Role:                 "role",
 					AuthMethod:           "jwt",
 					IgnoreMissingSecrets: "ignoreMissingSecrets",
-					VaultEnvPassThrough:  "vaultEnvPassThrough",
-					EnableJSONLog:        "enableJSONLog",
+					Passthrough:          "vaultPassthrough",
 					ClientTimeout:        10 * time.Second,
 					LogLevel:             "debug",
 				},
@@ -510,54 +535,21 @@ func Test_mutatingWebhook_mutateContainers(t *testing.T) {
 				{
 					Name:         "MyContainer",
 					Image:        "myimage",
-					Command:      []string{"/vault/vault-env"},
+					Command:      []string{"/vault/secret-init"},
 					Args:         []string{"/bin/bash"},
-					VolumeMounts: []corev1.VolumeMount{{Name: "vault-env", MountPath: "/vault/"}},
+					VolumeMounts: []corev1.VolumeMount{{Name: "secret-init", MountPath: "/vault/"}},
 					Env: []corev1.EnvVar{
-						{
-							Name:  "myvar",
-							Value: "vault:secrets",
-						},
-						{
-							Name:  "VAULT_LOG_LEVEL",
-							Value: "info",
-						},
-						{
-							Name:  "VAULT_ADDR",
-							Value: "addr",
-						},
-						{
-							Name:  "VAULT_SKIP_VERIFY",
-							Value: "false",
-						},
-						{
-							Name:  "VAULT_AUTH_METHOD",
-							Value: "jwt",
-						},
-						{
-							Name:  "VAULT_PATH",
-							Value: "path",
-						},
-						{
-							Name:  "VAULT_ROLE",
-							Value: "role",
-						},
-						{
-							Name:  "VAULT_IGNORE_MISSING_SECRETS",
-							Value: "ignoreMissingSecrets",
-						},
-						{
-							Name:  "VAULT_ENV_PASSTHROUGH",
-							Value: "vaultEnvPassThrough",
-						},
-						{
-							Name:  "VAULT_JSON_LOG",
-							Value: "enableJSONLog",
-						},
-						{
-							Name:  "VAULT_CLIENT_TIMEOUT",
-							Value: "10s",
-						},
+						{Name: "myvar", Value: "vault:secrets"},
+						{Name: "VAULT_LOG_LEVEL", Value: "info"},
+						{Name: "VAULT_ADDR", Value: "addr"},
+						{Name: "VAULT_SKIP_VERIFY", Value: "false"},
+						{Name: "VAULT_AUTH_METHOD", Value: "jwt"},
+						{Name: "VAULT_PATH", Value: "path"},
+						{Name: "VAULT_ROLE", Value: "role"},
+						{Name: "VAULT_IGNORE_MISSING_SECRETS", Value: "ignoreMissingSecrets"},
+						{Name: "VAULT_PASSTHROUGH", Value: "vaultPassthrough"},
+						{Name: "SECRET_INIT_JSON_LOG", Value: "enableJSONLog"},
+						{Name: "VAULT_CLIENT_TIMEOUT", Value: "10s"},
 					},
 				},
 			},
@@ -576,7 +568,7 @@ func Test_mutatingWebhook_mutateContainers(t *testing.T) {
 				registry:  ttp.fields.registry,
 				logger:    slog.Default(),
 			}
-			got, err := mw.mutateContainers(context.Background(), ttp.args.containers, ttp.args.podSpec, ttp.args.vaultConfig)
+			got, err := mw.mutateContainers(context.Background(), ttp.args.containers, ttp.args.podSpec, ttp.args.webhookConfig, ttp.args.SecretInitConfig, ttp.args.vaultConfig)
 			if (err != nil) != ttp.wantErr {
 				t.Errorf("MutatingWebhook.mutateContainers() error = %v, wantErr %v", err, ttp.wantErr)
 				return
@@ -599,18 +591,20 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 		registry  ImageRegistry
 	}
 	type args struct {
-		pod         *corev1.Pod
-		vaultConfig VaultConfig
+		pod              *corev1.Pod
+		webhookConfig    Config
+		secretInitConfig SecretInitConfig
+		vaultConfig      VaultConfig
 	}
 
 	defaultMode := int32(420)
 
 	baseSecurityContext := &corev1.SecurityContext{
-		RunAsUser:                &vaultConfig.RunAsUser,
-		RunAsGroup:               &vaultConfig.RunAsGroup,
-		RunAsNonRoot:             &vaultConfig.RunAsNonRoot,
-		ReadOnlyRootFilesystem:   &vaultConfig.ReadOnlyRootFilesystem,
-		AllowPrivilegeEscalation: &vaultConfig.PspAllowPrivilegeEscalation,
+		RunAsUser:                &webhookConfig.RunAsUser,
+		RunAsGroup:               &webhookConfig.RunAsGroup,
+		RunAsNonRoot:             &webhookConfig.RunAsNonRoot,
+		ReadOnlyRootFilesystem:   &webhookConfig.ReadOnlyRootFilesystem,
+		AllowPrivilegeEscalation: &webhookConfig.PspAllowPrivilegeEscalation,
 		Capabilities: &corev1.Capabilities{
 			Add: []corev1.Capability{},
 			Drop: []corev1.Capability{
@@ -620,11 +614,11 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 	}
 
 	agentInitContainerSecurityContext := &corev1.SecurityContext{
-		RunAsUser:                &vaultConfig.RunAsUser,
-		RunAsGroup:               &vaultConfig.RunAsGroup,
-		RunAsNonRoot:             &vaultConfig.RunAsNonRoot,
-		ReadOnlyRootFilesystem:   &vaultConfig.ReadOnlyRootFilesystem,
-		AllowPrivilegeEscalation: &vaultConfig.PspAllowPrivilegeEscalation,
+		RunAsUser:                &webhookConfig.RunAsUser,
+		RunAsGroup:               &webhookConfig.RunAsGroup,
+		RunAsNonRoot:             &webhookConfig.RunAsNonRoot,
+		ReadOnlyRootFilesystem:   &webhookConfig.ReadOnlyRootFilesystem,
+		AllowPrivilegeEscalation: &webhookConfig.PspAllowPrivilegeEscalation,
 		Capabilities: &corev1.Capabilities{
 			Add: []corev1.Capability{
 				"CHOWN",
@@ -640,11 +634,11 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 	}
 
 	agentContainerSecurityContext := &corev1.SecurityContext{
-		RunAsUser:                &vaultConfig.RunAsUser,
-		RunAsGroup:               &vaultConfig.RunAsGroup,
-		RunAsNonRoot:             &vaultConfig.RunAsNonRoot,
-		ReadOnlyRootFilesystem:   &vaultConfig.ReadOnlyRootFilesystem,
-		AllowPrivilegeEscalation: &vaultConfig.PspAllowPrivilegeEscalation,
+		RunAsUser:                &webhookConfig.RunAsUser,
+		RunAsGroup:               &webhookConfig.RunAsGroup,
+		RunAsNonRoot:             &webhookConfig.RunAsNonRoot,
+		ReadOnlyRootFilesystem:   &webhookConfig.ReadOnlyRootFilesystem,
+		AllowPrivilegeEscalation: &webhookConfig.PspAllowPrivilegeEscalation,
 		Capabilities: &corev1.Capabilities{
 			Drop: []corev1.Capability{
 				"ALL",
@@ -693,6 +687,17 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 						},
 					},
 				},
+				webhookConfig: Config{
+					RunAsNonRoot: true,
+					RunAsUser:    int64(1000),
+					RunAsGroup:   int64(1000),
+				},
+				secretInitConfig: SecretInitConfig{
+					CPURequest:    resource.MustParse("50m"),
+					MemoryRequest: resource.MustParse("64Mi"),
+					CPULimit:      resource.MustParse("250m"),
+					MemoryLimit:   resource.MustParse("64Mi"),
+				},
 				vaultConfig: VaultConfig{
 					CtConfigMap:                   "config-map-test",
 					ConfigfilePath:                "/vault/secrets",
@@ -702,14 +707,7 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 					CtMemory:                      resource.MustParse("128Mi"),
 					AgentImage:                    "hashicorp/vault:latest",
 					AgentImagePullPolicy:          "IfNotPresent",
-					EnvCPURequest:                 resource.MustParse("50m"),
-					EnvMemoryRequest:              resource.MustParse("64Mi"),
-					EnvCPULimit:                   resource.MustParse("250m"),
-					EnvMemoryLimit:                resource.MustParse("64Mi"),
 					ServiceAccountTokenVolumeName: "/var/run/secrets/kubernetes.io/serviceaccount",
-					RunAsNonRoot:                  true,
-					RunAsUser:                     int64(1000),
-					RunAsGroup:                    int64(1000),
 				},
 			},
 			wantedPod: &corev1.Pod{
@@ -743,7 +741,7 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 							SecurityContext: agentInitContainerSecurityContext,
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      "vault-env",
+									Name:      "secret-init",
 									MountPath: "/vault/",
 								},
 								{
@@ -779,7 +777,7 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 							SecurityContext: baseSecurityContext,
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      "vault-env",
+									Name:      "secret-init",
 									MountPath: "/vault/",
 								},
 								{
@@ -787,7 +785,7 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 									MountPath: "/vault/secrets",
 								},
 								{
-									Name:      "vault-env",
+									Name:      "secret-init",
 									MountPath: "/home/consul-template",
 								},
 								{
@@ -816,7 +814,7 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 					},
 					Volumes: []corev1.Volume{
 						{
-							Name: "vault-env",
+							Name: "secret-init",
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
 									Medium: corev1.StorageMediumMemory,
@@ -889,6 +887,17 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 						},
 					},
 				},
+				webhookConfig: Config{
+					RunAsNonRoot: true,
+					RunAsUser:    int64(1000),
+					RunAsGroup:   int64(1000),
+				},
+				secretInitConfig: SecretInitConfig{
+					CPURequest:    resource.MustParse("50m"),
+					MemoryRequest: resource.MustParse("64Mi"),
+					CPULimit:      resource.MustParse("250m"),
+					MemoryLimit:   resource.MustParse("64Mi"),
+				},
 				vaultConfig: VaultConfig{
 					CtConfigMap:                   "config-map-test",
 					CtOnce:                        true,
@@ -899,14 +908,7 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 					CtMemory:                      resource.MustParse("128Mi"),
 					AgentImage:                    "hashicorp/vault:latest",
 					AgentImagePullPolicy:          "IfNotPresent",
-					EnvCPURequest:                 resource.MustParse("50m"),
-					EnvMemoryRequest:              resource.MustParse("64Mi"),
-					EnvCPULimit:                   resource.MustParse("250m"),
-					EnvMemoryLimit:                resource.MustParse("64Mi"),
 					ServiceAccountTokenVolumeName: "/var/run/secrets/kubernetes.io/serviceaccount",
-					RunAsNonRoot:                  true,
-					RunAsUser:                     int64(1000),
-					RunAsGroup:                    int64(1000),
 				},
 			},
 			wantedPod: &corev1.Pod{
@@ -940,7 +942,7 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 							SecurityContext: agentInitContainerSecurityContext,
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      "vault-env",
+									Name:      "secret-init",
 									MountPath: "/vault/",
 								},
 								{
@@ -974,7 +976,7 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 							SecurityContext: baseSecurityContext,
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      "vault-env",
+									Name:      "secret-init",
 									MountPath: "/vault/",
 								},
 								{
@@ -982,7 +984,7 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 									MountPath: "/vault/secrets",
 								},
 								{
-									Name:      "vault-env",
+									Name:      "secret-init",
 									MountPath: "/home/consul-template",
 								},
 								{
@@ -1013,7 +1015,7 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 					},
 					Volumes: []corev1.Volume{
 						{
-							Name: "vault-env",
+							Name: "secret-init",
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
 									Medium: corev1.StorageMediumMemory,
@@ -1086,6 +1088,11 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 						},
 					},
 				},
+				webhookConfig: Config{
+					RunAsNonRoot: true,
+					RunAsUser:    int64(1000),
+					RunAsGroup:   int64(1000),
+				},
 				vaultConfig: VaultConfig{
 					AgentConfigMap:                "config-map-test",
 					ConfigfilePath:                "/vault/secrets",
@@ -1099,9 +1106,6 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 					AgentImagePullPolicy:          "IfNotPresent",
 					ServiceAccountTokenVolumeName: "/var/run/secrets/kubernetes.io/serviceaccount",
 					AgentEnvVariables:             "[{\"Name\": \"SKIP_SETCAP\",\"Value\": \"1\"}]",
-					RunAsNonRoot:                  true,
-					RunAsUser:                     int64(1000),
-					RunAsGroup:                    int64(1000),
 				},
 			},
 			wantedPod: &corev1.Pod{
@@ -1140,7 +1144,7 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 							SecurityContext: agentContainerSecurityContext,
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      "vault-env",
+									Name:      "secret-init",
 									MountPath: "/vault/",
 								},
 								{
@@ -1176,7 +1180,7 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 					},
 					Volumes: []corev1.Volume{
 						{
-							Name: "vault-env",
+							Name: "secret-init",
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
 									Medium: corev1.StorageMediumMemory,
@@ -1252,6 +1256,17 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 						},
 					},
 				},
+				webhookConfig: Config{
+					RunAsNonRoot: true,
+					RunAsUser:    int64(1000),
+					RunAsGroup:   int64(1000),
+				},
+				secretInitConfig: SecretInitConfig{
+					CPURequest:    resource.MustParse("50m"),
+					MemoryRequest: resource.MustParse("64Mi"),
+					CPULimit:      resource.MustParse("250m"),
+					MemoryLimit:   resource.MustParse("64Mi"),
+				},
 				vaultConfig: VaultConfig{
 					CtConfigMap:                   "config-map-test",
 					CtOnce:                        true,
@@ -1263,14 +1278,7 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 					CtMemory:                      resource.MustParse("128Mi"),
 					AgentImage:                    "hashicorp/vault:latest",
 					AgentImagePullPolicy:          "IfNotPresent",
-					EnvCPURequest:                 resource.MustParse("50m"),
-					EnvMemoryRequest:              resource.MustParse("64Mi"),
-					EnvCPULimit:                   resource.MustParse("250m"),
-					EnvMemoryLimit:                resource.MustParse("64Mi"),
 					ServiceAccountTokenVolumeName: "/var/run/secrets/kubernetes.io/serviceaccount",
-					RunAsNonRoot:                  true,
-					RunAsUser:                     int64(1000),
-					RunAsGroup:                    int64(1000),
 				},
 			},
 			wantedPod: &corev1.Pod{
@@ -1304,7 +1312,7 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 							SecurityContext: agentInitContainerSecurityContext,
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      "vault-env",
+									Name:      "secret-init",
 									MountPath: "/vault/",
 								},
 								{
@@ -1338,7 +1346,7 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 							SecurityContext: baseSecurityContext,
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      "vault-env",
+									Name:      "secret-init",
 									MountPath: "/vault/",
 								},
 								{
@@ -1346,7 +1354,7 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 									MountPath: "/vault/secrets",
 								},
 								{
-									Name:      "vault-env",
+									Name:      "secret-init",
 									MountPath: "/home/consul-template",
 								},
 								{
@@ -1389,7 +1397,7 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 					},
 					Volumes: []corev1.Volume{
 						{
-							Name: "vault-env",
+							Name: "secret-init",
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
 									Medium: corev1.StorageMediumMemory,
@@ -1475,6 +1483,17 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 						},
 					},
 				},
+				webhookConfig: Config{
+					RunAsNonRoot: true,
+					RunAsUser:    int64(1000),
+					RunAsGroup:   int64(1000),
+				},
+				secretInitConfig: SecretInitConfig{
+					CPURequest:    resource.MustParse("50m"),
+					MemoryRequest: resource.MustParse("64Mi"),
+					CPULimit:      resource.MustParse("250m"),
+					MemoryLimit:   resource.MustParse("64Mi"),
+				},
 				vaultConfig: VaultConfig{
 					CtConfigMap:                   "config-map-test",
 					CtInjectInInitcontainers:      true,
@@ -1485,14 +1504,7 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 					CtMemory:                      resource.MustParse("128Mi"),
 					AgentImage:                    "hashicorp/vault:latest",
 					AgentImagePullPolicy:          "IfNotPresent",
-					EnvCPURequest:                 resource.MustParse("50m"),
-					EnvMemoryRequest:              resource.MustParse("64Mi"),
-					EnvCPULimit:                   resource.MustParse("250m"),
-					EnvMemoryLimit:                resource.MustParse("64Mi"),
 					ServiceAccountTokenVolumeName: "/var/run/secrets/vault",
-					RunAsNonRoot:                  true,
-					RunAsUser:                     int64(1000),
-					RunAsGroup:                    int64(1000),
 				},
 			},
 			wantedPod: &corev1.Pod{
@@ -1526,7 +1538,7 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 							SecurityContext: agentInitContainerSecurityContext,
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      "vault-env",
+									Name:      "secret-init",
 									MountPath: "/vault/",
 								},
 								{
@@ -1573,7 +1585,7 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 							SecurityContext: baseSecurityContext,
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      "vault-env",
+									Name:      "secret-init",
 									MountPath: "/vault/",
 								},
 								{
@@ -1581,7 +1593,7 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 									MountPath: "/vault/secrets",
 								},
 								{
-									Name:      "vault-env",
+									Name:      "secret-init",
 									MountPath: "/home/consul-template",
 								},
 								{
@@ -1610,7 +1622,7 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 					},
 					Volumes: []corev1.Volume{
 						{
-							Name: "vault-env",
+							Name: "secret-init",
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
 									Medium: corev1.StorageMediumMemory,
@@ -1669,7 +1681,7 @@ func Test_mutatingWebhook_mutatePod(t *testing.T) {
 				registry:  ttp.fields.registry,
 				logger:    slog.Default(),
 			}
-			err := mw.MutatePod(context.Background(), ttp.args.pod, ttp.args.vaultConfig, false)
+			err := mw.MutatePod(context.Background(), ttp.args.pod, ttp.args.webhookConfig, ttp.args.secretInitConfig, ttp.args.vaultConfig, false)
 			if (err != nil) != ttp.wantErr {
 				t.Errorf("MutatingWebhook.MutatePod() error = %v, wantErr %v", err, ttp.wantErr)
 				return

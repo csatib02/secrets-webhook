@@ -49,9 +49,11 @@ type MutatingWebhook struct {
 }
 
 func (mw *MutatingWebhook) VaultSecretsMutator(ctx context.Context, ar *model.AdmissionReview, obj metav1.Object) (*mutating.MutatorResult, error) {
+	webhookConfig := parseConfig(obj)
+	secretInitConfig := parseSecretInitConfig(obj)
 	vaultConfig := parseVaultConfig(obj, ar)
 
-	if vaultConfig.Skip {
+	if webhookConfig.Mutate {
 		return &mutating.MutatorResult{}, nil
 	}
 
@@ -75,7 +77,7 @@ func (mw *MutatingWebhook) VaultSecretsMutator(ctx context.Context, ar *model.Ad
 
 	switch v := obj.(type) {
 	case *corev1.Pod:
-		return &mutating.MutatorResult{MutatedObject: v}, mw.MutatePod(ctx, v, vaultConfig, ar.DryRun)
+		return &mutating.MutatorResult{MutatedObject: v}, mw.MutatePod(ctx, v, webhookConfig, secretInitConfig, vaultConfig, ar.DryRun)
 
 	case *corev1.Secret:
 		return &mutating.MutatorResult{MutatedObject: v}, mw.MutateSecret(v, vaultConfig)
