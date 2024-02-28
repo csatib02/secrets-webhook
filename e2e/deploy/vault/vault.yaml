@@ -153,14 +153,8 @@ spec:
             MYSQL_ROOT_PASSWORD: s3cr3t
             MYSQL_PASSWORD: 3xtr3ms3cr3t
 
-  # Change this once the CRD in Vault-operator has been changed.
-  # secretInitsConfig:
-  #   - name: SECRET_INIT_LOG_LEVEL
-  #     value: debug
-  #   - name: VAULT_STORAGE_FILE
-  #     value: "/vault/file"
-  vaultEnvsConfig:
-    - name: VAULT_LOG_LEVEL
+  secretInitsConfig:
+    - name: SECRET_INIT_LOG_LEVEL
       value: debug
     - name: VAULT_STORAGE_FILE
       value: "/vault/file"

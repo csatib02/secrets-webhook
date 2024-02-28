@@ -256,7 +256,9 @@ jobs:
           name: "[helm-chart] package"
 
       - name: Test
-        run: nix develop --impure .#ci -c make test-e2e
+        # Workaround until we have a release
+        # run: nix develop --impure .#ci -c make test-e2e
+        run: nix develop --impure .#ci -c make test-e2e-local
         env:
           KIND_K8S_VERSION: ${{ matrix.k8s_version }}
           LOAD_IMAGE_ARCHIVE: ${{ github.workspace }}/docker.tar
