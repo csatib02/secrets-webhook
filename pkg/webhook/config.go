@@ -43,6 +43,7 @@ type Config struct {
 type SecretInitConfig struct {
 	Daemon          bool
 	Delay           time.Duration
+	LogLevel        string
 	JSONLog         string
 	Image           string
 	ImagePullPolicy corev1.PullPolicy
@@ -169,6 +170,8 @@ func parseSecretInitConfig(obj metav1.Object) SecretInitConfig {
 	}
 
 	secretInitConfig.LogServer = viper.GetString("SECRET_INIT_LOG_SERVER")
+
+	secretInitConfig.LogLevel = viper.GetString("SECRET_INIT_LOG_LEVEL")
 
 	if val, ok := annotations[common.SecretInitImagePullPolicyAnnotation]; ok {
 		secretInitConfig.ImagePullPolicy = getPullPolicy(val)
@@ -347,7 +350,7 @@ func parseVaultConfig(obj metav1.Object, ar *model.AdmissionReview) VaultConfig 
 	if val, ok := annotations[common.LogLevelAnnotation]; ok {
 		vaultConfig.LogLevel = val
 	} else {
-		vaultConfig.LogLevel = viper.GetString("log_level")
+		vaultConfig.LogLevel = viper.GetString("vault_log_level")
 	}
 
 	if val, ok := annotations[common.TransitKeyIDAnnotation]; ok {
@@ -509,13 +512,17 @@ func SetConfigDefaults() {
 	viper.SetDefault("default_image_pull_secret_namespace", "")
 	viper.SetDefault("registry_skip_verify", "false")
 	viper.SetDefault("secret_init_json_log", "false")
+	// Used by the webhook
 	viper.SetDefault("log_level", "info")
+	// Used by vault via secret-init
+	viper.SetDefault("vault_log_level", "info")
 	viper.SetDefault("vault_agent_share_process_namespace", "")
 	viper.SetDefault("SECRET_INIT_CPU_REQUEST", "")
 	viper.SetDefault("SECRET_INIT_MEMORY_REQUEST", "")
 	viper.SetDefault("SECRET_INIT_CPU_LIMIT", "")
 	viper.SetDefault("SECRET_INIT_MEMORY_LIMIT", "")
 	viper.SetDefault("SECRET_INIT_LOG_SERVER", "")
+	viper.SetDefault("SECRET_INIT_LOG_LEVEL", "info")
 	viper.SetDefault("VAULT_NAMESPACE", "")
 
 	viper.AutomaticEnv()

@@ -154,7 +154,7 @@ spec:
             MYSQL_PASSWORD: 3xtr3ms3cr3t
 
   secretInitsConfig:
-    - name: SECRET_INIT_LOG_LEVEL
+    - name: VAULT_LOG_LEVEL
       value: debug
     - name: VAULT_STORAGE_FILE
       value: "/vault/file"

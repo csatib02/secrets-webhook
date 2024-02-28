@@ -511,14 +511,17 @@ func Test_mutatingWebhook_mutateContainers(t *testing.T) {
 								Value: "vault:secrets",
 							},
 							{
-								Name:  "VAULT_LOG_LEVEL",
+								Name:  "SECRET_INIT_LOG_LEVEL",
 								Value: "info",
 							},
 						},
 					},
 				},
-				webhookConfig:    webhookConfig,
-				SecretInitConfig: secretInitConfig,
+				webhookConfig: webhookConfig,
+				SecretInitConfig: SecretInitConfig{
+					JSONLog:  "enableJSONLog",
+					LogLevel: "debug",
+				},
 				vaultConfig: VaultConfig{
 					Addr:                 "addr",
 					SkipVerify:           false,
@@ -528,7 +531,6 @@ func Test_mutatingWebhook_mutateContainers(t *testing.T) {
 					IgnoreMissingSecrets: "ignoreMissingSecrets",
 					Passthrough:          "vaultPassthrough",
 					ClientTimeout:        10 * time.Second,
-					LogLevel:             "debug",
 				},
 			},
 			wantedContainers: []corev1.Container{
@@ -540,7 +542,7 @@ func Test_mutatingWebhook_mutateContainers(t *testing.T) {
 					VolumeMounts: []corev1.VolumeMount{{Name: "secret-init", MountPath: "/vault/"}},
 					Env: []corev1.EnvVar{
 						{Name: "myvar", Value: "vault:secrets"},
-						{Name: "VAULT_LOG_LEVEL", Value: "info"},
+						{Name: "SECRET_INIT_LOG_LEVEL", Value: "info"},
 						{Name: "VAULT_ADDR", Value: "addr"},
 						{Name: "VAULT_SKIP_VERIFY", Value: "false"},
 						{Name: "VAULT_AUTH_METHOD", Value: "jwt"},
